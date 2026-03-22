@@ -1,0 +1,37 @@
+{
+  "name": "agenl",
+  "displayName": "AGENL — Agent Definition Language",
+  "description": "Syntax highlighting for .agent and .pipeline files",
+  "version": "0.1.0",
+  "publisher": "ShanthiniShans",
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "keywords": [
+    "agenl", "agent", "AI", "DSL", "language"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ShanthiniShans/agenl"
+  },
+  "contributes": {
+    "languages": [
+      {
+        "id": "agenl",
+        "aliases": ["AGENL", "agenl"],
+        "extensions": [".agent", ".pipeline"],
+        "configuration": "./language-config.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "agenl",
+        "scopeName": "source.agenl",
+        "path": "./syntaxes/agenl.tmLanguage.json"
+      }
+    ]
+  }
+}

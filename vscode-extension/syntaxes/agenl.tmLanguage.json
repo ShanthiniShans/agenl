@@ -1,0 +1,91 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "AGENL",
+  "scopeName": "source.agenl",
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#keywords" },
+    { "include": "#properties" },
+    { "include": "#strings" },
+    { "include": "#values" },
+    { "include": "#tools" },
+    { "include": "#punctuation" }
+  ],
+  "repository": {
+    "comments": {
+      "name": "comment.line.hash.agenl",
+      "match": "#.*$"
+    },
+    "keywords": {
+      "patterns": [
+        {
+          "name": "keyword.control.agenl",
+          "match": "\\b(agent|pipeline|extends|tools|memory|flow|agents)\\b"
+        },
+        {
+          "name": "keyword.operator.agenl",
+          "match": "->"
+        }
+      ]
+    },
+    "properties": {
+      "patterns": [
+        {
+          "name": "keyword.other.block.agenl",
+          "match": "\\b(allow|block|confirm|short|long|step_\\d+)\\b(?=\\s*:)"
+        },
+        {
+          "name": "entity.name.tag.agenl",
+          "match": "\\b(goal|persona|trust|on_uncertain|on_error|on_failure|output|description)\\b(?=\\s*:)"
+        }
+      ]
+    },
+    "strings": {
+      "name": "string.quoted.double.agenl",
+      "begin": "\"",
+      "end": "\"",
+      "patterns": [
+        {
+          "name": "constant.character.escape.agenl",
+          "match": "\\\\."
+        }
+      ]
+    },
+    "values": {
+      "patterns": [
+        {
+          "name": "support.constant.agenl",
+          "match": "\\b(low|medium|high|say_so|best_guess|escalate|retry|stop|last_\\d+_turns|stop_and_escalate)\\b"
+        },
+        {
+          "name": "entity.name.function.agenl",
+          "match": "\\b(vector_store)\\b"
+        },
+        {
+          "name": "entity.name.class.agenl",
+          "match": "\\b[A-Z][a-zA-Z0-9_]+\\b"
+        }
+      ]
+    },
+    "tools": {
+      "name": "variable.other.agenl",
+      "match": "\\b(web_search|read_file|write_file|run_python|send_email|delete_file|summarise|export_pdf|browse_web|query_database|read_email)\\b"
+    },
+    "punctuation": {
+      "patterns": [
+        {
+          "name": "punctuation.definition.block.agenl",
+          "match": "[{}]"
+        },
+        {
+          "name": "punctuation.definition.array.agenl",
+          "match": "[\\[\\]]"
+        },
+        {
+          "name": "punctuation.separator.agenl",
+          "match": ":"
+        }
+      ]
+    }
+  }
+}
