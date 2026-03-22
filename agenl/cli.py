@@ -228,3 +228,38 @@ def pipeline(pipeline_file):
 
     console.print("\n[green]Pipeline definition loaded.[/green]")
     console.print("[dim]Agents execute in sequence — each passing output to the next.[/dim]")
+
+
+@main.command()
+@click.argument("agent_file")
+@click.option("--author", "-a", default="anonymous",
+              help="Your name or username.")
+def publish(agent_file, author):
+    """Publish an agent to your local registry.
+
+    Example: agenl publish agents/research_bot.agent --author ShanthiniShans
+    """
+    from registry.registry import publish_agent
+    publish_agent(agent_file, author)
+
+
+@main.command()
+@click.argument("query", default="")
+def search(query):
+    """Search the agent registry.
+
+    Example: agenl search research
+    """
+    from registry.registry import search_registry
+    search_registry(query)
+
+
+@main.command()
+@click.argument("agent_name")
+def pull(agent_name):
+    """Pull an agent from the registry into your agents/ folder.
+
+    Example: agenl pull ResearchBot
+    """
+    from registry.registry import pull_agent
+    pull_agent(agent_name)
