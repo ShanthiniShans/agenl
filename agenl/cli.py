@@ -178,3 +178,53 @@ def list_agents():
         table.add_row(f, f"[dim]agenl run agents/{f}[/dim]")
 
     console.print(table)
+
+
+@main.command()
+@click.argument("pipeline_file")
+def pipeline(pipeline_file):
+    """Display and validate a multi-agent pipeline definition.
+
+    Example: agenl pipeline agents/research_team.pipeline
+    """
+    console.print(Panel(
+        f"[bold]Loading pipeline:[/bold] {pipeline_file}",
+        title="[purple]AGENL — Pipeline[/purple]",
+        border_style="purple"
+    ))
+
+    if not os.path.exists(pipeline_file):
+        console.print(f"[red]Error: File not found — {pipeline_file}[/red]")
+        return
+
+    with open(pipeline_file, "r") as f:
+        content = f.read()
+
+    console.print(Panel(
+        content,
+        title="[green]Pipeline Definition[/green]",
+        border_style="green"
+    ))
+
+    flow_steps = []
+    for line in content.split("\n"):
+        line = line.strip()
+        if "->" in line and "step_" in line:
+            parts = line.split("->")
+            agent_name = parts[0].split(":")[1].strip()
+            task = parts[1].strip().strip('"')
+            flow_steps.append((agent_name, task))
+
+    if flow_steps:
+        table = Table(title="Pipeline Flow", border_style="purple")
+        table.add_column("Step", style="bold")
+        table.add_column("Agent")
+        table.add_column("Task")
+
+        for i, (agent, task) in enumerate(flow_steps, 1):
+            table.add_row(f"Step {i}", agent, task)
+
+        console.print(table)
+
+    console.print("\n[green]Pipeline definition loaded.[/green]")
+    console.print("[dim]Agents execute in sequence — each passing output to the next.[/dim]")

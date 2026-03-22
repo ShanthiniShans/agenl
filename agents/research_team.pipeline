@@ -1,0 +1,22 @@
+# Research Team — a pipeline connecting three agents
+
+pipeline ResearchTeam {
+
+  description: "A three-agent team that researches, analyses and reports"
+
+  agents {
+    researcher: ResearchBot
+    analyst:    SeniorAnalyst
+    summariser: SummaryBot
+  }
+
+  flow {
+    step_1: researcher  -> "search and gather raw findings"
+    step_2: analyst     -> "analyse findings and structure data"
+    step_3: summariser  -> "produce final report for user"
+  }
+
+  on_failure: stop_and_escalate
+  output: step_3
+
+}
