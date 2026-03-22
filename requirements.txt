@@ -1,0 +1,5 @@
+anthropic
+lark
+pydantic
+rich
+python-dotenv
