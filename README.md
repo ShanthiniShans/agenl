@@ -1,6 +1,6 @@
 # AGENL — Agent Definition Language
 
-> Convert plain English into verified, enforceable AI agent contracts.
+> Convert natural language into verified, enforceable AI agent contracts.
 
 ---
 
@@ -18,62 +18,17 @@ No prompt drift. No ambiguity. No surprises.
 
 ---
 
-## The problem it solves
-```python
-# Today — fragile, unverifiable
-system_prompt = """Never send emails. Never delete files.
-Always ask before running code. If uncertain say so.
-Be precise. Cite sources. Don't speculate..."""
-# Hope the model remembers all of this. Every time.
-```
-```
-# AGENL — structured, enforced, auditable
-agent ResearchBot {
-  goal: "Search the web and summarise findings"
-  persona: "precise, always cites sources"
-
-  tools {
-    allow:   [web_search, summarise]
-    block:   [send_email, delete_file]
-    confirm: [run_python]
-  }
-
-  trust: medium
-  on_uncertain: say_so
-  on_error: escalate
-}
-```
-
-Same intent. One is a wish. The other is a contract.
-
----
-
-## How it works
-```
-You speak plain English
-        ↓
-AGENL converter (powered by Claude)
-        ↓
-Structured .agent definition generated
-        ↓
-You review and approve
-        ↓
-Runtime enforces the contract — structurally
-```
-
----
-
 ## Quick start
 
 ### 1. Clone the repo
 ```bash
-git clone https://github.com/YOUR_USERNAME/agenl.git
+git clone https://github.com/ShanthiniShans/agenl.git
 cd agenl
 ```
 
-### 2. Install dependencies
+### 2. Install
 ```bash
-pip install -r requirements.txt
+pip install -e .
 ```
 
 ### 3. Add your API key
@@ -83,89 +38,134 @@ Create a `.env` file in the root:
 ANTHROPIC_API_KEY=your-api-key-here
 ```
 
-### 4. Run AGENL
+### 4. Run your first agent
 ```bash
-python main.py
-```
-
-When prompted, describe your agent in plain English:
-```
-Describe your agent: I want an agent that searches the web and answers
-questions but never sends emails or deletes anything
-```
-
-AGENL will generate, parse, and verify the agent contract instantly.
-
----
-
-## Example output
-```
-Agent: WebSearchAgent
-Goal: Search the web and provide accurate answers
-
-┏━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ Property       ┃ Value                             ┃
-┡━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│ Allowed tools  │ web_search, browse_web, summarise │
-│ Blocked tools  │ send_email, delete_file           │
-│ Confirm before │ run_python                        │
-│ Trust level    │ medium                            │
-│ On uncertain   │ say_so                            │
-│ On error       │ escalate                          │
-└────────────────┴───────────────────────────────────┘
-
-Agent contract verified and enforced.
-Rules are structurally locked — not prompt-based.
+agenl run agents/research_bot.agent
 ```
 
 ---
 
-## Project structure
+## CLI commands
+
+### Convert plain English to an agent contract
+```bash
+agenl convert "an agent that searches the web but never sends emails"
 ```
-agenl/
-│
-├── README.md                  ← you are here
-├── .env                       ← your API key (never commit this)
-├── requirements.txt           ← dependencies
-│
-├── agenl/
-│   ├── __init__.py            ← package init
-│   ├── parser.py              ← reads .agent files
-│   ├── converter.py           ← natural language → AGENL
-│   └── runtime.py             ← enforces the contract
-│
-├── agents/
-│   └── research_bot.agent     ← example agent definition
-│
-└── main.py                    ← entry point
+
+Optionally save the generated definition:
+```bash
+agenl convert "an agent that monitors my inbox" --save agents/inbox_monitor.agent
+```
+
+### Run an agent from a file
+```bash
+agenl run agents/research_bot.agent
+```
+
+### Validate an agent file
+```bash
+agenl validate agents/research_bot.agent
+```
+
+### List all agents in the project
+```bash
+agenl list
+```
+
+### Run a multi-agent pipeline
+```bash
+agenl pipeline agents/research_team.pipeline
 ```
 
 ---
 
 ## The AGENL language
 
-An agent definition has six sections:
-
-| Section | What it does |
-|---|---|
-| `goal` | What the agent is trying to accomplish |
-| `persona` | How it should behave and communicate |
-| `tools` | What it can, cannot, and must confirm before doing |
-| `memory` | Short and long term memory configuration |
-| `trust` | Autonomy level — low, medium, or high |
-| `on_uncertain` | What to do when unsure — say_so or best_guess |
-| `on_error` | What to do on failure — escalate, retry, or stop |
-
-### Tool permission levels
+### Basic agent definition
 ```
-allow   — agent can use freely
-block   — hard no, enforced by runtime, model never sees the option
-confirm — must get user approval before proceeding
+agent ResearchBot {
+  goal: "Search the web and summarise findings"
+  persona: "precise, always cites sources, never speculates"
+
+  tools {
+    allow:   [web_search, summarise, read_file]
+    block:   [send_email, delete_file, write_file]
+    confirm: [run_python]
+  }
+
+  memory {
+    short: last_10_turns
+    long: vector_store("research_history")
+  }
+
+  trust: medium
+  on_uncertain: say_so
+  on_error: escalate
+}
+```
+
+### Agent inheritance
+```
+agent SeniorAnalyst extends ResearchBot {
+  goal: "Research topics deeply and produce formal reports"
+  persona: "thorough, formal, always cites sources"
+
+  tools {
+    allow:   [write_file, export_pdf]
+    confirm: [send_email]
+  }
+
+  trust: high
+}
+```
+
+`SeniorAnalyst` automatically inherits all rules from `ResearchBot`
+and adds its own on top. Update `ResearchBot` once — all children
+update automatically.
+
+### Multi-agent pipeline
+```
+pipeline ResearchTeam {
+  description: "Three agents that research, analyse and report"
+
+  agents {
+    researcher: ResearchBot
+    analyst:    SeniorAnalyst
+    summariser: SummaryBot
+  }
+
+  flow {
+    step_1: researcher  -> "search and gather raw findings"
+    step_2: analyst     -> "analyse findings and structure data"
+    step_3: summariser  -> "produce final report for user"
+  }
+
+  on_failure: stop_and_escalate
+  output: step_3
+}
 ```
 
 ---
 
-## Why this matters
+## Language reference
+
+### Tool permission levels
+
+| Level | Meaning |
+|---|---|
+| `allow` | Agent can use freely |
+| `block` | Hard no — enforced by runtime, model never sees the option |
+| `confirm` | Must get user approval before proceeding |
+
+### Agent properties
+
+| Property | Options | Meaning |
+|---|---|---|
+| `trust` | low, medium, high | How much autonomy the agent has |
+| `on_uncertain` | say_so, best_guess | What to do when unsure |
+| `on_error` | escalate, retry, stop | What to do on failure |
+
+### Why this beats prompt engineering
 
 | | Prompt engineering | AGENL |
 |---|---|---|
@@ -177,10 +177,35 @@ confirm — must get user approval before proceeding
 
 ---
 
+## Project structure
+```
+agenl/
+│
+├── README.md
+├── .env                       ← your API key (never commit this)
+├── requirements.txt
+├── setup.py                   ← makes agenl a real CLI tool
+│
+├── agenl/
+│   ├── __init__.py
+│   ├── parser.py              ← reads and validates .agent files
+│   ├── converter.py           ← natural language → AGENL via Claude
+│   ├── runtime.py             ← enforces the contract structurally
+│   └── cli.py                 ← all CLI commands
+│
+└── agents/
+    ├── research_bot.agent     ← base agent example
+    ├── senior_analyst.agent   ← inheritance example
+    ├── research_team.pipeline ← pipeline example
+    └── claude_co_founder.agent
+```
+
+---
+
 ## Roadmap
 
-- [x] **Phase 1** — Natural language → AGENL converter + parser + runtime
-- [ ] **Phase 2** — CLI, agent inheritance, pipeline support
+- [x] **Phase 1** — Natural language converter + parser + runtime
+- [x] **Phase 2** — CLI, agent inheritance, pipeline support
 - [ ] **Phase 3** — VS Code extension, agent registry, open source launch
 - [ ] **Phase 4** — Cloud hosting, enterprise audit trails, team features
 
@@ -188,9 +213,8 @@ confirm — must get user approval before proceeding
 
 ## Status
 
-Phase 1 complete. Actively building.
+Phase 2 complete. Actively building toward open source launch.
 
-This is an early-stage open source project.
 Star the repo to follow progress.
 Open an issue to share ideas or feedback.
 
