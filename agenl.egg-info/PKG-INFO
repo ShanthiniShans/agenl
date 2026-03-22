@@ -1,0 +1,16 @@
+Metadata-Version: 2.4
+Name: agenl
+Version: 0.2.0
+Summary: Agent Definition Language — convert natural language into enforced AI agent contracts
+Author: ShanthiniShans
+Requires-Python: >=3.10
+Requires-Dist: anthropic
+Requires-Dist: lark
+Requires-Dist: pydantic
+Requires-Dist: rich
+Requires-Dist: python-dotenv
+Requires-Dist: click
+Dynamic: author
+Dynamic: requires-dist
+Dynamic: requires-python
+Dynamic: summary
