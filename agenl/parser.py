@@ -153,23 +153,35 @@ def parse_agent(text: str) -> dict:
 
 def resolve_inheritance(child: dict, parent: dict) -> dict:
     resolved = {
-        "name":        child["name"],
-        "parent":      child.get("parent"),
-        "goal":        child.get("goal")        or parent.get("goal", ""),
-        "persona":     child.get("persona")     or parent.get("persona", ""),
-        "trust":       child.get("trust")        or parent.get("trust", "medium"),
-        "on_uncertain":child.get("on_uncertain") or parent.get("on_uncertain", "say_so"),
-        "on_error":    child.get("on_error")     or parent.get("on_error", "escalate"),
-        "memory":      child.get("memory")       or parent.get("memory", {}),
+        "name":         child["name"],
+        "parent":       child.get("parent"),
+        "goal":         child.get("goal")         or parent.get("goal", ""),
+        "persona":      child.get("persona")      or parent.get("persona", ""),
+        "trust":        child.get("trust")         or parent.get("trust", "medium"),
+        "on_uncertain": child.get("on_uncertain")  or parent.get("on_uncertain", "say_so"),
+        "on_error":     child.get("on_error")      or parent.get("on_error", "escalate"),
+        "memory":       child.get("memory")        or parent.get("memory", {}),
     }
 
     parent_tools = parent.get("tools", {"allow": [], "block": [], "confirm": []})
     child_tools  = child.get("tools",  {"allow": [], "block": [], "confirm": []})
 
+    child_allow   = set(child_tools.get("allow",   []))
+    child_block   = set(child_tools.get("block",   []))
+    child_confirm = set(child_tools.get("confirm", []))
+
+    parent_allow   = set(parent_tools.get("allow",   []))
+    parent_block   = set(parent_tools.get("block",   []))
+    parent_confirm = set(parent_tools.get("confirm", []))
+
+    final_allow = (parent_allow | child_allow) - child_block
+    final_block = (parent_block | child_block) - child_allow
+    final_confirm = (parent_confirm | child_confirm) - child_allow - child_block
+
     resolved["tools"] = {
-        "allow":   list(set(parent_tools.get("allow",   []) + child_tools.get("allow",   []))),
-        "block":   list(set(parent_tools.get("block",   []) + child_tools.get("block",   []))),
-        "confirm": list(set(parent_tools.get("confirm", []) + child_tools.get("confirm", []))),
+        "allow":   sorted(list(final_allow)),
+        "block":   sorted(list(final_block)),
+        "confirm": sorted(list(final_confirm)),
     }
 
     return resolved
