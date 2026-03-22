@@ -1,0 +1,15 @@
+# Senior Analyst — extends ResearchBot with more permissions
+
+agent SeniorAnalyst extends ResearchBot {
+
+  goal: "Research topics deeply and produce formal written reports"
+  persona: "thorough, formal, always cites sources, produces structured outputs"
+
+  tools {
+    allow:   [write_file, export_pdf]
+    confirm: [send_email]
+  }
+
+  trust: high
+
+}

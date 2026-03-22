@@ -1,5 +1,6 @@
 import click
 import os
+import re
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
@@ -10,22 +11,24 @@ load_dotenv()
 console = Console()
 
 from agenl.converter import convert_to_agenl
-from agenl.parser import parse_agent
+from agenl.parser import parse_agent, resolve_inheritance
 from agenl.runtime import execute_agent, check_tool_permission
+
 
 @click.group()
 def main():
     """AGENL — Agent Definition Language.
-    
+
     Convert natural language into verified AI agent contracts.
     """
     pass
+
 
 @main.command()
 @click.argument("agent_file")
 def run(agent_file):
     """Load and execute an agent from a .agent file.
-    
+
     Example: agenl run agents/research_bot.agent
     """
     console.print(Panel(
@@ -43,19 +46,41 @@ def run(agent_file):
 
     try:
         agent = parse_agent(agent_text)
+
+        if agent.get("parent"):
+            parent_name = agent["parent"]
+            snake = re.sub(r'(?<!^)(?=[A-Z])', '_', parent_name).lower()
+
+            parent_file = f"agents/{parent_name}.agent"
+            if not os.path.exists(parent_file):
+                parent_file = f"agents/{parent_name.lower()}.agent"
+            if not os.path.exists(parent_file):
+                parent_file = f"agents/{snake}.agent"
+
+            if os.path.exists(parent_file):
+                with open(parent_file, "r") as pf:
+                    parent_text = pf.read()
+                parent_agent = parse_agent(parent_text)
+                agent = resolve_inheritance(agent, parent_agent)
+                console.print(f"[dim]Inherited from: {parent_file}[/dim]\n")
+            else:
+                console.print(f"[yellow]Warning: parent '{parent_name}' not found.[/yellow]\n")
+
         execute_agent(agent)
+
     except Exception as e:
         console.print(f"[red]Parse error: {e}[/red]")
         console.print("[dim]Check your .agent file syntax and try again.[/dim]")
 
+
 @main.command()
 @click.argument("description")
 @click.option("--save", "-s", default=None,
-              help="Save generated agent to a file. Example: --save agents/my_bot.agent")
+              help="Save generated agent to a file.")
 def convert(description, save):
-    """Convert a plain English description into an AGENL definition.
+    """Convert plain English into an AGENL definition.
 
-    Example: agenl convert "an agent that searches the web but never sends emails"
+    Example: agenl convert "an agent that searches the web"
     """
     console.print(Panel(
         f"[bold]Input:[/bold] {description}",
@@ -84,6 +109,7 @@ def convert(description, save):
 
     except Exception as e:
         console.print(f"[red]Error: {e}[/red]")
+
 
 @main.command()
 @click.argument("agent_file")
@@ -125,8 +151,9 @@ def validate(agent_file):
         console.print(f"\n[red]Validation failed: {e}[/red]")
         console.print("[dim]Fix the syntax error above and try again.[/dim]")
 
-@main.command()
-def list():
+
+@main.command("list")
+def list_agents():
     """List all .agent files in the agents/ folder.
 
     Example: agenl list
