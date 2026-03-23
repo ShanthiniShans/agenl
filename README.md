@@ -33,9 +33,20 @@ pip install -e .
 
 ### 3. Add your API key
 
+AGENL uses Claude to convert natural language into agent 
+definitions. You need an Anthropic API key for this step.
+
+Get one free at console.anthropic.com — add $5 credit 
+which covers hundreds of agent conversions.
+
 Create a `.env` file in the root:
 ```
 ANTHROPIC_API_KEY=your-api-key-here
+```
+
+> **Note:** Your key stays on your machine and is never 
+> shared. The `.gitignore` file ensures it's never 
+> accidentally committed to GitHub.
 ```
 
 ### 4. Run your first agent
