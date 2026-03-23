@@ -47,9 +47,9 @@ ANTHROPIC_API_KEY=your-api-key-here
 > **Note:** Your key stays on your machine and is never 
 > shared. The `.gitignore` file ensures it's never 
 > accidentally committed to GitHub.
-```
 
 ### 4. Run your first agent
+
 ```bash
 agenl run agents/research_bot.agent
 ```
