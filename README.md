@@ -218,6 +218,13 @@ Phase 2 complete. Actively building toward open source launch.
 Star the repo to follow progress.
 Open an issue to share ideas or feedback.
 
+## Live demo
+
+[![AGENL Demo](https://asciinema.org/a/a4SNeFFyCzjKqcPZ.svg)](https://asciinema.org/a/a4SNeFFyCzjKqcPZ)
+
+Watch AGENL convert a complex healthcare agent description into a
+verified, enforced contract in real time.
+
 ---
 
 ## License
