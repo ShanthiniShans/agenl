@@ -1,190 +1,208 @@
 # AGENL — Agent Definition Language
 
-> Convert natural language into verified, enforceable AI agent contracts.
+> The governance and escalation layer for enterprise AI agents.
+> Define what agents can do. Enforce it structurally.
+> Escalate to humans when it matters.
 
 ---
 
-## What is AGENL?
+## The problem
 
-Building AI agents today means writing hundreds of words of English
-instructions and hoping the model follows them correctly every time.
-AGENL replaces that with a structured, readable contract that is
-enforced by the runtime — not by the model's interpretation.
+AI agents in production are governed by English prompts.
+Prompts are interpreted by the model — not enforced by the system.
+When interpretation goes wrong, the agent takes a real-world
+action you cannot undo.
 
-You describe what you want in plain English.
-AGENL converts it into a verified agent definition.
-The runtime enforces the rules structurally.
-No prompt drift. No ambiguity. No surprises.
+**AGENL fixes this.** You define agent behaviour in a structured
+contract. The runtime enforces every rule before the model sees
+the request. Blocked tools are removed entirely — the model never
+has the option to use them.
 
 ---
 
-## Quick start
+## Who this is for
 
-### 1. Clone the repo
+| Role | How AGENL helps |
+|---|---|
+| **Engineering teams** | Define agent permissions in code, not prompts |
+| **Compliance officers** | Audit exactly what every agent was allowed to do |
+| **Operations teams** | Build escalation workflows with human-in-the-loop |
+| **Enterprise AI teams** | Deploy agents with governance from day one |
+
+---
+
+## 60-second quickstart
+
+### Install
 ```bash
 git clone https://github.com/ShanthiniShans/agenl.git
 cd agenl
-```
-
-### 2. Install
-```bash
 pip install -e .
 ```
 
-### 3. Add your API key
-
-AGENL uses Claude to convert natural language into agent 
-definitions. You need an Anthropic API key for this step.
-
-Get one free at console.anthropic.com — add $5 credit 
-which covers hundreds of agent conversions.
-
-Create a `.env` file in the root:
-```
-ANTHROPIC_API_KEY=your-api-key-here
-```
-
-> **Note:** Your key stays on your machine and is never 
-> shared. The `.gitignore` file ensures it's never 
-> accidentally committed to GitHub.
-
-### 4. Run your first agent
-
+### Add your API key
 ```bash
-agenl run agents/research_bot.agent
+echo "ANTHROPIC_API_KEY=your-key-here" > .env
+```
+
+Get a key at console.anthropic.com — $5 credit covers
+hundreds of conversions.
+
+### Convert plain English to an agent contract
+```bash
+agenl convert "an agent that handles IT incidents but never
+restarts servers or deploys code without human approval"
+```
+
+### Run an enterprise agent
+```bash
+agenl run agents/incident_handler.agent
+```
+
+### Validate before deploying
+```bash
+agenl validate agents/compliance_checker.agent
 ```
 
 ---
 
-## CLI commands
+## Real-world use cases
 
-### Convert plain English to an agent contract
+### 1. Incident escalation — IT operations
+
+An agent monitors systems, triages incidents, and creates
+tickets automatically. Before it pages an on-call engineer
+or rolls back a deployment, it confirms with a human.
+Every decision is logged with full context.
 ```bash
-agenl convert "an agent that searches the web but never sends emails"
+agenl run agents/incident_handler.agent
 ```
 
-Optionally save the generated definition:
+### 2. Compliance checking — financial services
+
+An agent reviews transactions for regulatory violations.
+It can query databases and generate reports — but cannot
+approve transactions, modify records, or notify regulators
+without explicit human confirmation. Every decision is
+auditable.
 ```bash
-agenl convert "an agent that monitors my inbox" --save agents/inbox_monitor.agent
+agenl run agents/compliance_checker.agent
 ```
 
-### Run an agent from a file
-```bash
-agenl run agents/research_bot.agent
-```
+### 3. Research pipeline — enterprise knowledge work
 
-### Validate an agent file
-```bash
-agenl validate agents/research_bot.agent
-```
-
-### List all agents in the project
-```bash
-agenl list
-```
-
-### Run a multi-agent pipeline
+A three-agent team where a researcher gathers findings,
+an analyst structures the data, and a writer produces
+the report. Each agent has its own enforced contract.
+The pipeline is defined in a single file.
 ```bash
 agenl pipeline agents/research_team.pipeline
 ```
 
 ---
 
-## The AGENL language
-
-### Basic agent definition
+## What an agent contract looks like
 ```
-agent ResearchBot {
-  goal: "Search the web and summarise findings"
-  persona: "precise, always cites sources, never speculates"
+agent IncidentHandler {
+  goal: "Detect, triage and escalate system incidents"
+  persona: "calm, methodical, always escalates when uncertain"
 
   tools {
-    allow:   [web_search, summarise, read_file]
-    block:   [send_email, delete_file, write_file]
-    confirm: [run_python]
+    allow:   [query_database, read_file, summarise]
+    block:   [delete_file, modify_config, restart_service]
+    confirm: [send_email, page_oncall, rollback_deployment]
   }
 
-  memory {
-    short: last_10_turns
-    long: vector_store("research_history")
+  escalation {
+    trigger:  on_uncertain
+    notify:   human_in_loop
+    context:  full_trace
+    timeout:  30_minutes
+    fallback: stop_and_log
   }
 
-  trust: medium
-  on_uncertain: say_so
-  on_error: escalate
+  trust: low
+  on_uncertain: escalate
+  on_error:     escalate
 }
 ```
 
-### Agent inheritance
-```
-agent SeniorAnalyst extends ResearchBot {
-  goal: "Research topics deeply and produce formal reports"
-  persona: "thorough, formal, always cites sources"
+**What each section enforces:**
 
-  tools {
-    allow:   [write_file, export_pdf]
-    confirm: [send_email]
-  }
+| Section | What it does |
+|---|---|
+| `tools.allow` | Agent can use these freely |
+| `tools.block` | Hard removed — model never sees these as options |
+| `tools.confirm` | Agent must get human approval before proceeding |
+| `escalation` | What happens when agent hits uncertainty or failure |
+| `trust` | Autonomy level — low means confirm frequently |
+| `on_uncertain` | Escalate rather than guess |
+| `on_error` | Escalate rather than retry blindly |
 
-  trust: high
-}
-```
+---
 
-`SeniorAnalyst` automatically inherits all rules from `ResearchBot`
-and adds its own on top. Update `ResearchBot` once — all children
-update automatically.
+## How AGENL is different
 
-### Multi-agent pipeline
-```
-pipeline ResearchTeam {
-  description: "Three agents that research, analyse and report"
+| | LangChain | CrewAI | AutoGen | **AGENL** |
+|---|---|---|---|---|
+| Agent rules defined by | Python code | Python code | Config + code | Structured DSL |
+| Rules enforced by | Developer discipline | Developer discipline | Framework conventions | **Runtime — structurally** |
+| Natural language input | No | No | No | **Yes — built in** |
+| Audit trail | No | No | No | **Yes — every .agent file** |
+| Human escalation | Manual to build | Manual to build | Partial | **First-class feature** |
+| Non-developer friendly | No | No | No | **Yes — readable contracts** |
+| Composable via inheritance | No | No | No | **Yes — extends keyword** |
 
-  agents {
-    researcher: ResearchBot
-    analyst:    SeniorAnalyst
-    summariser: SummaryBot
-  }
+**The key difference:** LangChain, CrewAI, and AutoGen are
+frameworks for building agents. AGENL is the governance layer
+that sits above any framework — defining what agents are allowed
+to do and enforcing it structurally.
 
-  flow {
-    step_1: researcher  -> "search and gather raw findings"
-    step_2: analyst     -> "analyse findings and structure data"
-    step_3: summariser  -> "produce final report for user"
-  }
+---
 
-  on_failure: stop_and_escalate
-  output: step_3
-}
+## CLI commands
+```bash
+agenl convert "describe your agent in plain English"
+agenl run     agents/my_agent.agent
+agenl validate agents/my_agent.agent
+agenl list
+agenl pipeline agents/my_team.pipeline
+agenl publish  agents/my_agent.agent --author yourname
+agenl search   [query]
+agenl pull     AgentName
 ```
 
 ---
 
-## Language reference
+## Agent inheritance
 
-### Tool permission levels
+Build a governance hierarchy. Define rules once at the base
+level. Specialised agents inherit and extend.
+```
+agent BaseEnterpriseAgent {
+  trust: low
+  on_uncertain: escalate
+  on_error: escalate
+  tools {
+    block: [delete_file, modify_config]
+  }
+}
 
-| Level | Meaning |
-|---|---|
-| `allow` | Agent can use freely |
-| `block` | Hard no — enforced by runtime, model never sees the option |
-| `confirm` | Must get user approval before proceeding |
+agent IncidentHandler extends BaseEnterpriseAgent {
+  goal: "Handle IT incidents"
+  tools.allow: [query_database, create_ticket]
+  tools.confirm: [page_oncall, rollback_deployment]
+}
 
-### Agent properties
+agent ComplianceChecker extends BaseEnterpriseAgent {
+  goal: "Review compliance violations"
+  tools.allow: [query_database, export_pdf]
+  tools.confirm: [flag_transaction, notify_regulator]
+}
+```
 
-| Property | Options | Meaning |
-|---|---|---|
-| `trust` | low, medium, high | How much autonomy the agent has |
-| `on_uncertain` | say_so, best_guess | What to do when unsure |
-| `on_error` | escalate, retry, stop | What to do on failure |
-
-### Why this beats prompt engineering
-
-| | Prompt engineering | AGENL |
-|---|---|---|
-| Rules enforced by | Model interpretation | Runtime — structurally |
-| Auditable | No | Yes — one readable file |
-| Consistent | Drifts over time | Same every run |
-| Composable | Copy-paste prompts | extends keyword |
-| Enterprise-ready | No | Yes |
+Update `BaseEnterpriseAgent` once — every agent that
+extends it updates automatically.
 
 ---
 
@@ -192,49 +210,44 @@ pipeline ResearchTeam {
 ```
 agenl/
 │
-├── README.md
-├── .env                       ← your API key (never commit this)
-├── requirements.txt
-├── setup.py                   ← makes agenl a real CLI tool
-│
 ├── agenl/
-│   ├── __init__.py
-│   ├── parser.py              ← reads and validates .agent files
-│   ├── converter.py           ← natural language → AGENL via Claude
-│   ├── runtime.py             ← enforces the contract structurally
-│   └── cli.py                 ← all CLI commands
+│   ├── parser.py      — Lark grammar, validates .agent files
+│   ├── converter.py   — Natural language → AGENL via Claude
+│   ├── runtime.py     — Enforces contracts structurally
+│   └── cli.py         — 8 CLI commands
 │
-└── agents/
-    ├── research_bot.agent     ← base agent example
-    ├── senior_analyst.agent   ← inheritance example
-    ├── research_team.pipeline ← pipeline example
-    └── claude_co_founder.agent
+├── agents/
+│   ├── incident_handler.agent    — IT operations example
+│   ├── compliance_checker.agent  — Financial services example
+│   ├── research_bot.agent        — Research pipeline example
+│   └── senior_analyst.agent      — Inheritance example
+│
+├── registry/          — Local agent registry
+├── vscode-extension/  — Syntax highlighting for .agent files
+└── setup.py           — pip install -e .
 ```
 
 ---
-
-## Roadmap
-
-- [x] **Phase 1** — Natural language converter + parser + runtime
-- [x] **Phase 2** — CLI, agent inheritance, pipeline support
-- [ ] **Phase 3** — VS Code extension, agent registry, open source launch
-- [ ] **Phase 4** — Cloud hosting, enterprise audit trails, team features
-
----
-
-## Status
-
-Phase 2 complete. Actively building toward open source launch.
-
-Star the repo to follow progress.
-Open an issue to share ideas or feedback.
 
 ## Live demo
 
 [![AGENL Demo](https://asciinema.org/a/a4SNeFFyCzjKqcPZ.svg)](https://asciinema.org/a/a4SNeFFyCzjKqcPZ)
 
-Watch AGENL convert a complex healthcare agent description into a
-verified, enforced contract in real time.
+---
+
+## Roadmap
+
+- [x] Phase 1 — Natural language converter, parser, runtime
+- [x] Phase 2 — CLI, agent inheritance, multi-agent pipelines
+- [x] Phase 3 — VS Code extension, agent registry, public launch
+- [ ] Phase 4 — Cloud hosting, web dashboard, observability
+- [ ] Phase 5 — Enterprise audit trails, SSO, compliance exports
+
+---
+
+## Discussion
+
+[Hacker News](https://news.ycombinator.com/item?id=47481950)
 
 ---
 
@@ -244,4 +257,4 @@ MIT — free to use, modify, and build on.
 
 ---
 
-*AGENL — because AI agents need contracts, not wishes.*
+*AGENL — because enterprise AI agents need contracts, not wishes.*
