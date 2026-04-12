@@ -11,7 +11,11 @@
     "Programming Languages"
   ],
   "keywords": [
-    "agenl", "agent", "AI", "DSL", "language"
+    "agenl",
+    "agent",
+    "AI",
+    "DSL",
+    "language"
   ],
   "repository": {
     "type": "git",
@@ -23,7 +27,7 @@
         "id": "agenl",
         "aliases": ["AGENL", "agenl"],
         "extensions": [".agent", ".pipeline"],
-        "configuration": "./language-config.json"
+        "configuration": "./syntaxes/language-config.json"
       }
     ],
     "grammars": [

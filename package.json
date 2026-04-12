@@ -1,0 +1,8 @@
+{
+  "name": "agenl",
+  "private": true,
+  "description": "AGENL workspace (Python package + VS Code extension)",
+  "scripts": {
+    "vscode:package": "cd vscode-extension && vsce package"
+  }
+}
