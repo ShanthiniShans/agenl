@@ -104,11 +104,23 @@ def _load_escalation_log() -> list[dict[str, Any]]:
 
 def _candidate_lean_paths(agent_filename: str) -> list[Path]:
     stem = Path(agent_filename).stem
-    return [
-        BASE_DIR / "proofs" / f"{stem}.lean",
-        BASE_DIR / "lean" / f"{stem}.lean",
-        AGENTS_DIR / f"{stem}.lean",
-    ]
+    snake = re.sub(r"(?<!^)(?=[A-Z])", "_", stem).lower()
+    lower = stem.lower()
+    variants = []
+    for candidate in [stem, snake, lower]:
+        if candidate not in variants:
+            variants.append(candidate)
+
+    paths: list[Path] = []
+    for base in variants:
+        paths.extend(
+            [
+                BASE_DIR / "proofs" / f"{base}.lean",
+                BASE_DIR / "lean" / f"{base}.lean",
+                AGENTS_DIR / f"{base}.lean",
+            ]
+        )
+    return paths
 
 
 def _lean_file_info(agent_filename: str) -> tuple[Path, bool, str]:
