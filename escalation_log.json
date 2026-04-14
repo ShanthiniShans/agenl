@@ -1,0 +1,208 @@
+{
+  "escalations": [
+    {
+      "id": "ef75036e-4f5b-4ede-b2ba-f9dd741aa354",
+      "timestamp_utc": "2026-04-14T09:38:15.086241+00:00",
+      "agent_name": "IncidentHandler",
+      "trigger": "uncertainty",
+      "activity": "Web UI run: preflight decision before tool call.",
+      "problem": "Simulated low-confidence branch during dashboard run.",
+      "full_context": {
+        "escalation_id": "ef75036e-4f5b-4ede-b2ba-f9dd741aa354",
+        "started_at_utc": "2026-04-14T09:38:15.086241+00:00",
+        "trigger": "uncertainty",
+        "activity": "Web UI run: preflight decision before tool call.",
+        "problem": "Simulated low-confidence branch during dashboard run.",
+        "agent": {
+          "name": "IncidentHandler",
+          "goal": "Detect, triage, and escalate system incidents with full context and never act destructively without explicit human approval",
+          "persona": "calm, methodical, conservative, always escalates when uncertain, documents every decision, and never rushes to action",
+          "trust": "low",
+          "on_uncertain": "escalate",
+          "on_error": "escalate",
+          "tools": {
+            "allow": [
+              "query_database",
+              "read_file",
+              "summarise",
+              "browse_web",
+              "create_ticket"
+            ],
+            "block": [
+              "delete_file",
+              "modify_config",
+              "restart_service",
+              "deploy_code"
+            ],
+            "confirm": [
+              "send_email",
+              "page_oncall",
+              "rollback_deployment",
+              "scale_infrastructure"
+            ]
+          }
+        },
+        "extra": {
+          "source": "web_ui_runner"
+        }
+      },
+      "human_decision": null,
+      "human_instruction": null,
+      "resolved_at_utc": "2026-04-14T09:38:15.086569+00:00",
+      "status": "logged_without_prompt"
+    },
+    {
+      "id": "d63d1d2a-4135-4a24-9853-02bd48100489",
+      "timestamp_utc": "2026-04-14T09:39:33.687352+00:00",
+      "agent_name": "IncidentHandler",
+      "trigger": "uncertainty",
+      "activity": "Web UI run: preflight decision before tool call.",
+      "problem": "Simulated low-confidence branch during dashboard run.",
+      "full_context": {
+        "escalation_id": "d63d1d2a-4135-4a24-9853-02bd48100489",
+        "started_at_utc": "2026-04-14T09:39:33.687352+00:00",
+        "trigger": "uncertainty",
+        "activity": "Web UI run: preflight decision before tool call.",
+        "problem": "Simulated low-confidence branch during dashboard run.",
+        "agent": {
+          "name": "IncidentHandler",
+          "goal": "Detect, triage, and escalate system incidents with full context and never act destructively without explicit human approval",
+          "persona": "calm, methodical, conservative, always escalates when uncertain, documents every decision, and never rushes to action",
+          "trust": "low",
+          "on_uncertain": "escalate",
+          "on_error": "escalate",
+          "tools": {
+            "allow": [
+              "query_database",
+              "read_file",
+              "summarise",
+              "browse_web",
+              "create_ticket"
+            ],
+            "block": [
+              "delete_file",
+              "modify_config",
+              "restart_service",
+              "deploy_code"
+            ],
+            "confirm": [
+              "send_email",
+              "page_oncall",
+              "rollback_deployment",
+              "scale_infrastructure"
+            ]
+          }
+        },
+        "extra": {
+          "source": "web_ui_runner"
+        }
+      },
+      "human_decision": null,
+      "human_instruction": null,
+      "resolved_at_utc": "2026-04-14T09:39:33.688369+00:00",
+      "status": "logged_without_prompt"
+    },
+    {
+      "id": "bb45bc61-fbe3-45d5-9410-063a5d865427",
+      "timestamp_utc": "2026-04-14T09:42:43.982586+00:00",
+      "agent_name": "IncidentHandler",
+      "trigger": "uncertainty",
+      "activity": "Web UI run: preflight decision before tool call.",
+      "problem": "Simulated low-confidence branch during dashboard run.",
+      "full_context": {
+        "escalation_id": "bb45bc61-fbe3-45d5-9410-063a5d865427",
+        "started_at_utc": "2026-04-14T09:42:43.982586+00:00",
+        "trigger": "uncertainty",
+        "activity": "Web UI run: preflight decision before tool call.",
+        "problem": "Simulated low-confidence branch during dashboard run.",
+        "agent": {
+          "name": "IncidentHandler",
+          "goal": "Detect, triage, and escalate system incidents with full context and never act destructively without explicit human approval",
+          "persona": "calm, methodical, conservative, always escalates when uncertain, documents every decision, and never rushes to action",
+          "trust": "low",
+          "on_uncertain": "escalate",
+          "on_error": "escalate",
+          "tools": {
+            "allow": [
+              "query_database",
+              "read_file",
+              "summarise",
+              "browse_web",
+              "create_ticket"
+            ],
+            "block": [
+              "delete_file",
+              "modify_config",
+              "restart_service",
+              "deploy_code"
+            ],
+            "confirm": [
+              "send_email",
+              "page_oncall",
+              "rollback_deployment",
+              "scale_infrastructure"
+            ]
+          }
+        },
+        "extra": {
+          "source": "web_ui_runner"
+        }
+      },
+      "human_decision": null,
+      "human_instruction": null,
+      "resolved_at_utc": "2026-04-14T09:42:43.982971+00:00",
+      "status": "logged_without_prompt"
+    },
+    {
+      "id": "63e6a035-2731-4b96-8a65-92ebf165d8d3",
+      "timestamp_utc": "2026-04-14T10:08:41.780651+00:00",
+      "agent_name": "IncidentHandler",
+      "trigger": "uncertainty",
+      "activity": "Web UI run: preflight decision before tool call.",
+      "problem": "Simulated low-confidence branch during dashboard run.",
+      "full_context": {
+        "escalation_id": "63e6a035-2731-4b96-8a65-92ebf165d8d3",
+        "started_at_utc": "2026-04-14T10:08:41.780651+00:00",
+        "trigger": "uncertainty",
+        "activity": "Web UI run: preflight decision before tool call.",
+        "problem": "Simulated low-confidence branch during dashboard run.",
+        "agent": {
+          "name": "IncidentHandler",
+          "goal": "Detect, triage, and escalate system incidents with full context and never act destructively without explicit human approval",
+          "persona": "calm, methodical, conservative, always escalates when uncertain, documents every decision, and never rushes to action",
+          "trust": "low",
+          "on_uncertain": "escalate",
+          "on_error": "escalate",
+          "tools": {
+            "allow": [
+              "query_database",
+              "read_file",
+              "summarise",
+              "browse_web",
+              "create_ticket"
+            ],
+            "block": [
+              "delete_file",
+              "modify_config",
+              "restart_service",
+              "deploy_code"
+            ],
+            "confirm": [
+              "send_email",
+              "page_oncall",
+              "rollback_deployment",
+              "scale_infrastructure"
+            ]
+          }
+        },
+        "extra": {
+          "source": "web_ui_runner"
+        }
+      },
+      "human_decision": null,
+      "human_instruction": null,
+      "resolved_at_utc": "2026-04-14T10:08:41.781790+00:00",
+      "status": "logged_without_prompt"
+    }
+  ]
+}
