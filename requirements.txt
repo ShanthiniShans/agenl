@@ -3,3 +3,4 @@ lark
 pydantic
 rich
 python-dotenv
+flask

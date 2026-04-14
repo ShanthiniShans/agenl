@@ -1,0 +1,438 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AGENL Dashboard</title>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --panel: #171a23;
+      --panel-border: #252a38;
+      --text: #e9edf5;
+      --muted: #a4adc2;
+      --accent: #6ea8fe;
+      --accent-2: #4cd6b2;
+      --danger: #ff7676;
+      --warn: #ffcc66;
+      --ok: #67e38f;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: var(--text);
+      background: radial-gradient(circle at top right, #1c2335, var(--bg) 40%);
+    }
+    .wrap { max-width: 1400px; margin: 18px auto; padding: 0 16px; }
+    .title { font-size: 24px; margin: 0 0 8px; }
+    .subtitle { color: var(--muted); margin-bottom: 16px; }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: minmax(360px, auto) minmax(320px, auto);
+      gap: 14px;
+    }
+    .panel {
+      background: linear-gradient(180deg, #191d28, var(--panel));
+      border: 1px solid var(--panel-border);
+      border-radius: 14px;
+      padding: 14px;
+      box-shadow: 0 10px 25px rgba(0,0,0,.24);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+    .panel h2 { margin: 0 0 10px; font-size: 17px; }
+    textarea, select, input, button {
+      font: inherit;
+      color: var(--text);
+    }
+    textarea, select {
+      width: 100%;
+      background: #0f121a;
+      border: 1px solid #2a3142;
+      border-radius: 10px;
+      color: var(--text);
+      padding: 10px;
+    }
+    textarea { min-height: 88px; resize: vertical; }
+    button {
+      margin-top: 10px;
+      background: linear-gradient(90deg, var(--accent), #8f7bff);
+      border: none;
+      border-radius: 10px;
+      padding: 10px 12px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    button:hover { filter: brightness(1.05); }
+    .subhead {
+      margin: 10px 0 6px;
+      color: var(--muted);
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: .4px;
+    }
+    pre {
+      margin: 0;
+      padding: 10px;
+      background: #0d1017;
+      border: 1px solid #2a3142;
+      border-radius: 10px;
+      overflow: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+      flex: 1;
+      min-height: 120px;
+    }
+    .code .kw { color: #9ecbff; font-weight: 600; }
+    .code .field { color: #8ed1b0; }
+    .code .val { color: #ffd88f; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      background: #0f121a;
+      border: 1px solid #2a3142;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    th, td { padding: 8px 10px; border-bottom: 1px solid #232a39; vertical-align: top; }
+    th { text-align: left; color: var(--muted); width: 38%; }
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 11px;
+      border-radius: 999px;
+      border: 1px solid #2b3244;
+      background: #111522;
+      font-weight: 600;
+      margin-top: 10px;
+      width: fit-content;
+    }
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #7b8499;
+      box-shadow: 0 0 10px rgba(180,190,210,.35);
+    }
+    .dot.idle { background: #7b8499; }
+    .dot.running { background: var(--accent); }
+    .dot.uncertain { background: var(--warn); }
+    .dot.escalating { background: var(--danger); }
+    .dot.done { background: var(--ok); }
+    .cards {
+      display: grid;
+      gap: 9px;
+      overflow: auto;
+      padding-right: 2px;
+    }
+    .card {
+      border: 1px solid #2b3244;
+      background: #101420;
+      border-radius: 10px;
+      padding: 10px;
+      animation: cardIn .4s ease;
+    }
+    @keyframes cardIn {
+      from { opacity: .1; transform: translateY(8px) scale(.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .meta { color: var(--muted); font-size: 12px; margin-bottom: 6px; }
+    .decision-approve { color: var(--ok); font-weight: 700; }
+    .decision-reject { color: var(--danger); font-weight: 700; }
+    .decision-modify { color: #86d0ff; font-weight: 700; }
+    .decision-na { color: var(--warn); font-weight: 700; }
+    .row { display: flex; gap: 10px; align-items: center; }
+    .row > * { flex: 1; }
+    .verify-row { display: flex; gap: 10px; align-items: center; margin-top: 10px; }
+    .checkmark {
+      font-size: 22px;
+      color: var(--ok);
+      display: none;
+      margin-left: 8px;
+    }
+    .msg { margin-top: 8px; color: var(--muted); font-size: 13px; min-height: 18px; }
+    @media (max-width: 1040px) {
+      .grid { grid-template-columns: 1fr; grid-template-rows: auto; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1 class="title">AGENL Live Dashboard</h1>
+    <div class="subtitle">Convert, run, escalate, and verify contracts in one view.</div>
+
+    <div class="grid">
+      <section class="panel">
+        <h2>Panel 1 — Agent Converter</h2>
+        <textarea id="description" placeholder="Describe your agent in plain English..."></textarea>
+        <button id="convertBtn">Convert to AGENL</button>
+        <div class="msg" id="convertMsg"></div>
+
+        <div class="subhead">Generated Contract</div>
+        <pre id="contractOut" class="code"></pre>
+
+        <div class="subhead">Parsed Contract Table</div>
+        <table>
+          <tbody>
+            <tr><th>Allowed tools</th><td id="allowedTools">-</td></tr>
+            <tr><th>Blocked tools</th><td id="blockedTools">-</td></tr>
+            <tr><th>Confirm tools</th><td id="confirmTools">-</td></tr>
+            <tr><th>Trust level</th><td id="trustLevel">-</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="panel">
+        <h2>Panel 3 — Escalation Log (auto-refresh: 3s)</h2>
+        <div class="cards" id="escalationCards"></div>
+      </section>
+
+      <section class="panel">
+        <h2>Panel 2 — Agent Runner</h2>
+        <div class="row">
+          <select id="agentSelect"></select>
+          <button id="runBtn">Run Agent</button>
+        </div>
+        <div class="status"><span id="statusDot" class="dot idle"></span><span id="runStatusText">idle</span></div>
+        <div class="msg" id="runStatusMsg">No run yet.</div>
+
+        <div class="subhead">Loaded + Verified Contract</div>
+        <pre id="runContractOut"></pre>
+      </section>
+
+      <section class="panel">
+        <h2>Panel 4 — Lean Verification</h2>
+        <div class="row">
+          <input id="leanPath" readonly value="proofs/<agent>.lean">
+        </div>
+        <div class="subhead">Lean Proof File</div>
+        <pre id="leanContent"></pre>
+
+        <div class="verify-row">
+          <button id="verifyBtn">Verify Contract</button>
+          <div id="verifyStatus" class="status"><span id="verifyDot" class="dot idle"></span><span id="verifyText">unverified</span></div>
+          <span id="checkmark" class="checkmark">✔</span>
+        </div>
+        <div class="msg" id="verifyMsg"></div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const state = { seenEscalationIds: new Set() };
+
+    const $ = (id) => document.getElementById(id);
+    const esc = (s) => String(s ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+
+    function setRunStatus(status, message) {
+      $("runStatusText").textContent = status || "idle";
+      $("runStatusMsg").textContent = message || "";
+      $("statusDot").className = `dot ${status || "idle"}`;
+    }
+
+    function setVerifyStatus(status, message) {
+      $("verifyText").textContent = status;
+      $("verifyMsg").textContent = message || "";
+      $("verifyDot").className = `dot ${status === "checking" ? "running" : status === "verified" ? "done" : "idle"}`;
+      $("checkmark").style.display = status === "verified" ? "inline" : "none";
+    }
+
+    function highlightAgenl(text) {
+      const tokenRe = /"[^"\\]*(?:\\.[^"\\]*)*"|\b(agent|extends|tools|memory)\b|\b(goal|persona|allow|block|confirm|trust|on_uncertain|on_error|short|long)\b|\b(low|medium|high|say_so|best_guess|escalate|retry|stop)\b/g;
+      let out = "";
+      let last = 0;
+      let match;
+      while ((match = tokenRe.exec(text)) !== null) {
+        out += esc(text.slice(last, match.index));
+        const token = match[0];
+        if (token.startsWith('"')) {
+          out += `<span class="val">${esc(token)}</span>`;
+        } else if (match[1]) {
+          out += `<span class="kw">${esc(token)}</span>`;
+        } else if (match[2]) {
+          out += `<span class="field">${esc(token)}</span>`;
+        } else {
+          out += `<span class="val">${esc(token)}</span>`;
+        }
+        last = match.index + token.length;
+      }
+      out += esc(text.slice(last));
+      return out;
+    }
+
+    async function loadAgents() {
+      const res = await fetch("/api/agents");
+      const data = await res.json();
+      const sel = $("agentSelect");
+      sel.innerHTML = "";
+      (data.agents || []).forEach((name) => {
+        const opt = document.createElement("option");
+        opt.value = name;
+        opt.textContent = name;
+        sel.appendChild(opt);
+      });
+      if (sel.value) {
+        loadLeanFile(sel.value);
+        loadSelectedAgentContract(sel.value);
+      }
+    }
+
+    async function loadSelectedAgentContract(agentFile) {
+      const res = await fetch(`/api/lean-file?agent_file=${encodeURIComponent(agentFile)}`);
+      if (!res.ok) return;
+      const selectedPath = `agents/${agentFile}`;
+      const text = `Selected agent: ${selectedPath}\nUse "Run Agent" to parse and execute runtime checks.`;
+      $("runContractOut").textContent = text;
+    }
+
+    async function doConvert() {
+      const description = $("description").value.trim();
+      if (!description) {
+        $("convertMsg").textContent = "Please enter a description first.";
+        return;
+      }
+      $("convertMsg").textContent = "Converting...";
+      const res = await fetch("/api/convert", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ description })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        $("convertMsg").textContent = data.error || "Conversion failed.";
+        return;
+      }
+      $("convertMsg").textContent = "Contract generated.";
+      $("contractOut").innerHTML = highlightAgenl(data.contract_text || "");
+      $("allowedTools").textContent = (data.contract_table.allowed_tools || []).join(", ") || "-";
+      $("blockedTools").textContent = (data.contract_table.blocked_tools || []).join(", ") || "-";
+      $("confirmTools").textContent = (data.contract_table.confirm_tools || []).join(", ") || "-";
+      $("trustLevel").textContent = data.contract_table.trust_level || "-";
+    }
+
+    async function runAgent() {
+      const agentFile = $("agentSelect").value;
+      if (!agentFile) return;
+      setRunStatus("running", "Starting agent...");
+      const res = await fetch("/api/run-agent", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ agent_file: agentFile })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setRunStatus("done", data.error || "Run failed to start.");
+        return;
+      }
+      $("runContractOut").textContent = `Running ${agentFile}...`;
+    }
+
+    async function pollRunStatus() {
+      const res = await fetch("/api/run-status");
+      const data = await res.json();
+      setRunStatus(data.status, data.message);
+      if (data.agent_file) {
+        $("runContractOut").textContent =
+`Agent file: ${data.agent_file}
+Agent name: ${data.agent_name || "-"}
+Last update: ${data.last_updated || "-"}`;
+      }
+    }
+
+    function decisionClass(decision) {
+      if (decision === "approve") return "decision-approve";
+      if (decision === "reject") return "decision-reject";
+      if (decision === "modify") return "decision-modify";
+      return "decision-na";
+    }
+
+    function decisionText(decision) {
+      if (!decision) return "no-human-input";
+      return decision;
+    }
+
+    async function loadEscalations() {
+      const res = await fetch("/api/escalations");
+      const data = await res.json();
+      const container = $("escalationCards");
+      const events = data.events || [];
+      container.innerHTML = "";
+      for (const ev of events) {
+        const id = ev.id || `${ev.timestamp_utc}-${ev.activity}`;
+        const isNew = !state.seenEscalationIds.has(id);
+        state.seenEscalationIds.add(id);
+        const card = document.createElement("article");
+        card.className = "card";
+        if (isNew) {
+          card.style.borderColor = "#4cd6b2";
+          card.style.boxShadow = "0 0 0 1px rgba(76,214,178,.45)";
+        }
+        const decision = decisionText(ev.human_decision);
+        card.innerHTML = `
+          <div class="meta">${esc(ev.timestamp_utc || "unknown time")}</div>
+          <div><strong>Doing:</strong> ${esc(ev.activity || "-")}</div>
+          <div><strong>Issue:</strong> ${esc(ev.problem || "-")}</div>
+          <div><strong>Decision:</strong> <span class="${decisionClass(ev.human_decision)}">${esc(decision)}</span></div>
+        `;
+        container.appendChild(card);
+      }
+      if (!events.length) {
+        container.innerHTML = '<div class="card"><div class="meta">No escalations yet</div><div>Escalations will appear here automatically.</div></div>';
+      }
+    }
+
+    async function loadLeanFile(agentFile) {
+      if (!agentFile) return;
+      const res = await fetch(`/api/lean-file?agent_file=${encodeURIComponent(agentFile)}`);
+      const data = await res.json();
+      if (!res.ok) {
+        $("leanPath").value = "error";
+        $("leanContent").textContent = data.error || "Failed to load Lean file.";
+        setVerifyStatus("unverified", "");
+        return;
+      }
+      $("leanPath").value = data.path || "";
+      $("leanContent").textContent = data.content || "";
+      setVerifyStatus(data.exists ? "unverified" : "unverified", data.exists ? "Proof file found." : "No proof file yet.");
+    }
+
+    async function verifyContract() {
+      const agentFile = $("agentSelect").value;
+      if (!agentFile) return;
+      setVerifyStatus("checking", "Running Lean verification...");
+      const res = await fetch("/api/verify-contract", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ agent_file: agentFile })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setVerifyStatus("unverified", data.error || "Verification failed.");
+        return;
+      }
+      setVerifyStatus(data.verification_status || "unverified", data.message || "");
+    }
+
+    $("convertBtn").addEventListener("click", doConvert);
+    $("runBtn").addEventListener("click", runAgent);
+    $("verifyBtn").addEventListener("click", verifyContract);
+    $("agentSelect").addEventListener("change", (e) => {
+      const val = e.target.value;
+      loadLeanFile(val);
+      loadSelectedAgentContract(val);
+    });
+
+    loadAgents();
+    pollRunStatus();
+    loadEscalations();
+    setInterval(pollRunStatus, 1500);
+    setInterval(loadEscalations, 3000);
+  </script>
+</body>
+</html>
