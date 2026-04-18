@@ -64,6 +64,12 @@ agenl run agents/incident_handler.agent
 agenl validate agents/compliance_checker.agent
 ```
 
+### Run the live dashboard
+```bash
+python app.py
+```
+Open http://127.0.0.1:5001 — 4 panels showing contract generation, agent execution, escalation log, and Lean verification live.
+
 ---
 
 ## Real-world use cases
@@ -160,6 +166,32 @@ to do and enforcing it structurally.
 
 ---
 
+## Formal Verification — Lean 4
+
+AGENL uses Lean 4 to generate mathematical proofs of contract correctness. These are not tests — they are theorems. Once verified, they are mathematically certain.
+
+### Current theorems (all verified ✓)
+
+**Theorem 1 — No allow/block overlap**  
+No tool can appear in both the allowed list and the blocked list simultaneously.
+
+**Theorem 2 — Low trust forces safe uncertainty policy**  
+When trust level is low, on_uncertain must be escalate or say_so — never best_guess.
+
+**Theorem 3 — Required fields present**  
+All required contract fields are present and non-empty. An incomplete contract cannot be deployed.
+
+Proof files: `proofs/incident_handler.lean`, `proofs/research_bot.lean`
+
+### Planned enhancements (online phase)
+
+- Free Monad execution model — agent programs as monadic computations over ToolEffect
+- Information flow proofs — secret data cannot reach public outputs
+- Liveness proofs — governed agents can still complete their tasks
+- Formal memory model — DataLabel types with provable flow rules
+
+---
+
 ## CLI commands
 ```bash
 agenl convert "describe your agent in plain English"
@@ -240,8 +272,8 @@ agenl/
 - [x] Phase 1 — Natural language converter, parser, runtime
 - [x] Phase 2 — CLI, agent inheritance, multi-agent pipelines
 - [x] Phase 3 — VS Code extension, agent registry, public launch
-- [ ] Phase 4 — Cloud hosting, web dashboard, observability
-- [ ] Phase 5 — Enterprise audit trails, SSO, compliance exports
+- [x] Phase 4 — Live web dashboard (localhost:5001), human-in-loop escalation, escalation_log.json audit trail
+- [ ] Phase 5 — Cloud hosting, Lean library (Free Monad, information flow, liveness proofs), ORBITAL aerospace platform
 
 ---
 
