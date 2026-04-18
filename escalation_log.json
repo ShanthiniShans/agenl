@@ -203,6 +203,57 @@
       "human_instruction": null,
       "resolved_at_utc": "2026-04-14T10:08:41.781790+00:00",
       "status": "logged_without_prompt"
+    },
+    {
+      "id": "45b6451a-c879-4747-858b-78adc6d84d47",
+      "timestamp_utc": "2026-04-18T05:28:46.123394+00:00",
+      "agent_name": "IncidentHandler",
+      "trigger": "uncertainty",
+      "activity": "Web UI run: preflight decision before tool call.",
+      "problem": "Simulated low-confidence branch during dashboard run.",
+      "full_context": {
+        "escalation_id": "45b6451a-c879-4747-858b-78adc6d84d47",
+        "started_at_utc": "2026-04-18T05:28:46.123394+00:00",
+        "trigger": "uncertainty",
+        "activity": "Web UI run: preflight decision before tool call.",
+        "problem": "Simulated low-confidence branch during dashboard run.",
+        "agent": {
+          "name": "IncidentHandler",
+          "goal": "Detect, triage, and escalate system incidents with full context and never act destructively without explicit human approval",
+          "persona": "calm, methodical, conservative, always escalates when uncertain, documents every decision, and never rushes to action",
+          "trust": "low",
+          "on_uncertain": "escalate",
+          "on_error": "escalate",
+          "tools": {
+            "allow": [
+              "query_database",
+              "read_file",
+              "summarise",
+              "browse_web",
+              "create_ticket"
+            ],
+            "block": [
+              "delete_file",
+              "modify_config",
+              "restart_service",
+              "deploy_code"
+            ],
+            "confirm": [
+              "send_email",
+              "page_oncall",
+              "rollback_deployment",
+              "scale_infrastructure"
+            ]
+          }
+        },
+        "extra": {
+          "source": "web_ui_runner"
+        }
+      },
+      "human_decision": null,
+      "human_instruction": null,
+      "resolved_at_utc": "2026-04-18T05:28:46.124665+00:00",
+      "status": "logged_without_prompt"
     }
   ]
 }
