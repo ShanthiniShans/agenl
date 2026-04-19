@@ -21,3 +21,18 @@ def toolName : ToolEffect α → String
   | .SendEmail _ => "send_email"
   | .Escalate  _ => "escalate"
   | .RunPython _ => "run_python"
+-- Allowed tools predicate
+inductive SafeTool : String → Prop where
+  | allowed (name : String) (h : name ∉ [] ) : SafeTool name
+
+-- Safe program: inductive proof that no blocked tool runs
+inductive SafeProg (contract : AgentContract) :
+    {α : Type} → AgentProgram α → Prop where
+  | pureSafe : ∀ {α : Type} (a : α),
+      SafeProg contract (AgentProgram.Pure a)
+  | effectSafe : ∀ {α β : Type}
+      (eff : ToolEffect α)
+      (k : α → AgentProgram β),
+      toolName eff ∉ contract.blocked →
+      (∀ a, SafeProg contract (k a)) →
+      SafeProg contract (AgentProgram.Effect eff k)
