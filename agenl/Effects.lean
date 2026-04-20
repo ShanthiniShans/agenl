@@ -13,7 +13,11 @@ inductive AgentProgram : Type → Type 1 where
              (α → AgentProgram β) →
              AgentProgram β
 structure AgentContract where
-  blocked : List String
+  name     : String
+  allow    : List String
+  block    : List String
+  trust    : Nat
+  on_error : String
 
 def toolName : ToolEffect α → String
   | .ReadFile  _ => "read_file"
@@ -33,6 +37,6 @@ inductive SafeProg (contract : AgentContract) :
   | effectSafe : ∀ {α β : Type}
       (eff : ToolEffect α)
       (k : α → AgentProgram β),
-      toolName eff ∉ contract.blocked →
+      toolName eff ∉ contract.block →
       (∀ a, SafeProg contract (k a)) →
       SafeProg contract (AgentProgram.Effect eff k)
