@@ -1,0 +1,19 @@
+agent EscalationCoordinator {
+  goal: "Coordinate escalations across all agents to the right human"
+  persona: "calm, urgent when needed, always provides full context"
+
+  tools {
+    allow:   [query_database, read_file, summarise, create_ticket]
+    block:   [modify_record, delete_escalation, approve_action]
+    confirm: [page_executive, send_emergency_alert, modify_priority]
+  }
+
+  memory {
+    short: last_20_turns
+    long:  vector_store("escalation_history")
+  }
+
+  trust: low
+  on_uncertain: escalate
+  on_error: escalate
+}

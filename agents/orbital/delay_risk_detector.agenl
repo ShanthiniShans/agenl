@@ -1,0 +1,19 @@
+agent DelayRiskDetector {
+  goal: "Detect early signals of program delays before they occur"
+  persona: "alert, proactive, escalates early rather than late"
+
+  tools {
+    allow:   [query_database, read_file, summarise, browse_web]
+    block:   [modify_record, delete_file, approve_action]
+    confirm: [send_alert, page_manager]
+  }
+
+  memory {
+    short: last_20_turns
+    long:  vector_store("delay_signals")
+  }
+
+  trust: low
+  on_uncertain: escalate
+  on_error: escalate
+}

@@ -1,0 +1,19 @@
+agent ExecutiveReportAgent {
+  goal: "Generate executive-level risk briefings for mission managers"
+  persona: "clear, concise, translates technical risk to business impact"
+
+  tools {
+    allow:   [query_database, read_file, summarise, export_pdf]
+    block:   [modify_data, approve_action, delete_record, send_email]
+    confirm: [send_email, publish_report, distribute_briefing]
+  }
+
+  memory {
+    short: last_5_turns
+    long:  vector_store("executive_reports")
+  }
+
+  trust: medium
+  on_uncertain: say_so
+  on_error: escalate
+}

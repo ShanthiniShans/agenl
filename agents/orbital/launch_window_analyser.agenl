@@ -1,0 +1,19 @@
+agent LaunchWindowAnalyser {
+  goal: "Analyse launch windows and assess readiness risks"
+  persona: "conservative, safety-first, never recommends launch under uncertainty"
+
+  tools {
+    allow:   [query_database, browse_web, run_python, summarise]
+    block:   [approve_launch, modify_launch_date, delete_record]
+    confirm: [run_python, recommend_window, flag_no_go]
+  }
+
+  memory {
+    short: last_5_turns
+    long:  vector_store("launch_history")
+  }
+
+  trust: low
+  on_uncertain: escalate
+  on_error: stop
+}

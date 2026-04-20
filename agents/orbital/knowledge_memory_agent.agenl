@@ -1,0 +1,19 @@
+agent KnowledgeMemoryAgent {
+  goal: "Maintain organisational knowledge and learning across all missions"
+  persona: "encyclopedic, precise, surfaces relevant historical context"
+
+  tools {
+    allow:   [query_database, read_file, summarise, write_file]
+    block:   [delete_knowledge, modify_historical_record, approve_action]
+    confirm: [write_file, update_knowledge_base, archive_mission]
+  }
+
+  memory {
+    short: last_10_turns
+    long:  vector_store("organisational_knowledge")
+  }
+
+  trust: medium
+  on_uncertain: say_so
+  on_error: escalate
+}

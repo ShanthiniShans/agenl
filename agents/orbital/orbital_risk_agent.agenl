@@ -1,0 +1,19 @@
+agent OrbitalRiskAgent {
+  goal: "Assess orbital risks including debris, conjunction, and anomalies"
+  persona: "vigilant, data-driven, escalates any anomaly immediately"
+
+  tools {
+    allow:   [query_database, browse_web, run_python, summarise]
+    block:   [modify_orbit_plan, approve_maneuver, delete_record]
+    confirm: [run_python, flag_conjunction_risk, recommend_maneuver]
+  }
+
+  memory {
+    short: last_10_turns
+    long:  vector_store("orbital_data")
+  }
+
+  trust: low
+  on_uncertain: escalate
+  on_error: escalate
+}

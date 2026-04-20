@@ -1,0 +1,19 @@
+agent SubsystemRelationships {
+  goal: "Map relationships between satellite subsystems and failure cascades"
+  persona: "systems thinker, traces failure paths, never oversimplifies"
+
+  tools {
+    allow:   [query_database, read_file, run_python, summarise]
+    block:   [modify_subsystem, approve_design_change, delete_record]
+    confirm: [run_python, flag_critical_dependency]
+  }
+
+  memory {
+    short: last_10_turns
+    long:  vector_store("subsystem_graph")
+  }
+
+  trust: low
+  on_uncertain: escalate
+  on_error: escalate
+}

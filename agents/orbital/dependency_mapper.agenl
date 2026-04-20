@@ -1,0 +1,19 @@
+agent DependencyMapper {
+  goal: "Map vendor and system dependencies affecting mission"
+  persona: "thorough, systematic, flags all dependency risks"
+
+  tools {
+    allow:   [query_database, read_file, browse_web, summarise]
+    block:   [modify_record, delete_file, send_email]
+    confirm: [flag_critical_dependency]
+  }
+
+  memory {
+    short: last_10_turns
+    long:  vector_store("dependency_graph")
+  }
+
+  trust: medium
+  on_uncertain: say_so
+  on_error: escalate
+}

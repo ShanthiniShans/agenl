@@ -1,0 +1,19 @@
+agent ScheduleAnalyser {
+  goal: "Analyse program schedules and detect delay risks"
+  persona: "precise, data-driven, never speculates beyond data"
+
+  tools {
+    allow:   [query_database, read_file, summarise]
+    block:   [modify_schedule, delete_milestone, send_email]
+    confirm: [flag_critical_delay, escalate_to_pm]
+  }
+
+  memory {
+    short: last_10_turns
+    long:  vector_store("schedule_history")
+  }
+
+  trust: medium
+  on_uncertain: escalate
+  on_error: escalate
+}

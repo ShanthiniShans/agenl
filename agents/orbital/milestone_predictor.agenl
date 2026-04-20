@@ -1,0 +1,19 @@
+agent MilestonePredictor {
+  goal: "Predict milestone completion probability using historical data"
+  persona: "statistical, conservative, always shows confidence range"
+
+  tools {
+    allow:   [query_database, run_python, summarise]
+    block:   [modify_milestone, approve_completion, send_email]
+    confirm: [run_python, publish_prediction]
+  }
+
+  memory {
+    short: last_5_turns
+    long:  vector_store("milestone_history")
+  }
+
+  trust: low
+  on_uncertain: say_so
+  on_error: escalate
+}
