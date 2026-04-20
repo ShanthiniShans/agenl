@@ -1,10 +1,14 @@
 name = "agenl"
 version = "0.1.0"
-defaultTargets = ["AGENL"]
+defaultTargets = ["AGENL", "Proofs"]
 
 [[lean_lib]]
 name = "AGENL"
 globs = ["AGENL.+"]
+
+[[lean_lib]]
+name = "Proofs"
+globs = ["proofs.orbital.+"]
 
 [[require]]
 name = "mathlib"
