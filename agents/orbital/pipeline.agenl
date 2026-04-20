@@ -1,0 +1,46 @@
+pipeline SpaceMissionIntelligence {
+  description: "Complete space mission risk intelligence system"
+
+  agents {
+    schedule:    ScheduleAnalyser
+    dependency:  DependencyMapper
+    milestone:   MilestonePredictor
+    delay:       DelayRiskDetector
+    context:     MissionContextAgent
+    subsystem:   SubsystemRelationships
+    launch:      LaunchWindowAnalyser
+    orbital:     OrbitalRiskAgent
+    synthesis:   RiskSynthesiser
+    executive:   ExecutiveReportAgent
+    escalation:  EscalationCoordinator
+    knowledge:   KnowledgeMemoryAgent
+  }
+
+  flow {
+    step_1:  context    -> "establish mission context"
+    step_2:  schedule   -> "analyse program schedule"
+    step_3:  dependency -> "map dependencies"
+    step_4:  milestone  -> "predict milestones"
+    step_5:  delay      -> "detect delay risks"
+    step_6:  subsystem  -> "analyse subsystem relationships"
+    step_7:  launch     -> "assess launch readiness"
+    step_8:  orbital    -> "check orbital risks"
+    step_9:  synthesis  -> "generate unified risk score"
+    step_10: executive  -> "produce executive briefing"
+    step_11: escalation -> "coordinate any escalations"
+    step_12: knowledge  -> "update organisational memory"
+    step_13: subsystem  -> schedule
+             "subsystem failure impacts schedule"
+  }
+
+  feedback {
+    from:   SubsystemRelationships
+    to:     ScheduleAnalyser
+    signal: "subsystem_failure_schedule_impact"
+    label:  Internal
+    on_loop: terminate_after_one_pass
+  }
+
+  on_failure: stop_and_escalate
+  output: step_12
+}
