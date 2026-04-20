@@ -1,198 +1,313 @@
 # AGENL — Agent Definition Language
 
-> The governance and escalation layer for enterprise AI agents.
-> Define what agents can do. Enforce it structurally.
-> Escalate to humans when it matters.
+> "Today's agents run on hope. AGENL runs on proofs."
+
+AGENL is a domain-specific language for defining
+AI agents with mathematically verified safety
+guarantees. Define what agents can do. Prove what
+they cannot. Enforce it structurally. Escalate to
+humans when it matters.
 
 ---
 
-## The problem
+## The Problem
 
-AI agents in production are governed by English prompts.
-Prompts are interpreted by the model — not enforced by the system.
-When interpretation goes wrong, the agent takes a real-world
-action you cannot undo.
+AI agents in production are governed by English
+prompts. Prompts are interpreted by the model —
+not enforced by the system. When interpretation
+goes wrong, the agent takes a real-world action
+you cannot undo.
 
-**AGENL fixes this.** You define agent behaviour in a structured
-contract. The runtime enforces every rule before the model sees
-the request. Blocked tools are removed entirely — the model never
-has the option to use them.
+AGENL fixes this on two levels:
+
+**Runtime enforcement** — You define agent
+behaviour in a structured contract. The runtime
+enforces every rule before the model sees the
+request. Blocked tools are removed entirely — the
+model never has the option to use them.
+
+**Mathematical proof** — Lean 4 proves theorems
+about agent contracts. When Lean verifies a
+theorem, it is not a test result. It is a
+mathematical certainty. True in every possible
+execution, with no exceptions.
 
 ---
 
-## Who this is for
+## Who This Is For
 
 | Role | How AGENL helps |
 |---|---|
-| **Engineering teams** | Define agent permissions in code, not prompts |
-| **Compliance officers** | Audit exactly what every agent was allowed to do |
-| **Operations teams** | Build escalation workflows with human-in-the-loop |
-| **Enterprise AI teams** | Deploy agents with governance from day one |
+| Engineering teams | Define agent permissions in code, not prompts |
+| Compliance officers | Audit exactly what every agent was allowed to do |
+| Operations teams | Build escalation workflows with human-in-the-loop |
+| Enterprise AI teams | Deploy agents with governance from day one |
+| Aerospace and defence | Prove agent constraints meet certification requirements |
 
 ---
 
-## 60-second quickstart
+## 60-Second Quickstart
 
-### Install
+**Install**
 ```bash
 git clone https://github.com/ShanthiniShans/agenl.git
 cd agenl
 pip install -e .
 ```
 
-### Add your API key
+**Add your API key**
 ```bash
 echo "ANTHROPIC_API_KEY=your-key-here" > .env
 ```
 
-Get a key at console.anthropic.com — $5 credit covers
-hundreds of conversions.
-
-### Convert plain English to an agent contract
+**Convert plain English to an agent contract**
 ```bash
-agenl convert "an agent that handles IT incidents but never
-restarts servers or deploys code without human approval"
+agenl convert "an agent that handles IT incidents
+but never restarts servers or deploys code without
+human approval"
 ```
 
-### Run an enterprise agent
+**Run an enterprise agent**
 ```bash
 agenl run agents/incident_handler.agent
 ```
 
-### Validate before deploying
+**Validate before deploying**
 ```bash
 agenl validate agents/compliance_checker.agent
 ```
 
-### Run the live dashboard
+**Run the live dashboard**
 ```bash
 python app.py
 ```
-Open http://127.0.0.1:5001 — 4 panels showing contract generation, agent execution, escalation log, and Lean verification live.
+Open http://127.0.0.1:5001 — panels showing
+contract generation, agent execution, escalation
+log, and Lean verification live.
 
 ---
 
-## Real-world use cases
+## What an Agent Contract Looks Like
+agent IncidentHandler {
+goal: "Detect, triage and escalate system incidents"
+persona: "calm, methodical, always escalates when uncertain"
+tools {
+allow:   [query_database, read_file, summarise]
+block:   [delete_file, modify_config, restart_service]
+confirm: [send_email, page_oncall, rollback_deployment]
+}
+escalation {
+trigger:  on_uncertain
+notify:   human_in_loop
+context:  full_trace
+timeout:  30_minutes
+fallback: stop_and_log
+}
+trust: low
+on_uncertain: escalate
+on_error:     escalate
+}
 
-### 1. Incident escalation — IT operations
+| Section | What it does |
+|---|---|
+| tools.allow | Agent can use these freely |
+| tools.block | Hard removed — model never sees these as options |
+| tools.confirm | Agent must get human approval before proceeding |
+| escalation | What happens when agent hits uncertainty or failure |
+| trust | Autonomy level — low means confirm frequently |
+| on_uncertain | Escalate rather than guess |
+| on_error | Escalate rather than retry blindly |
 
-An agent monitors systems, triages incidents, and creates
-tickets automatically. Before it pages an on-call engineer
-or rolls back a deployment, it confirms with a human.
-Every decision is logged with full context.
+---
+
+## Real-World Use Cases
+
+**1. Incident escalation — IT operations**
+
+An agent monitors systems, triages incidents, and
+creates tickets automatically. Before it pages an
+on-call engineer or rolls back a deployment, it
+confirms with a human. Every decision is logged
+with full context.
+
 ```bash
 agenl run agents/incident_handler.agent
 ```
 
-### 2. Compliance checking — financial services
+**2. Compliance checking — financial services**
 
-An agent reviews transactions for regulatory violations.
-It can query databases and generate reports — but cannot
-approve transactions, modify records, or notify regulators
-without explicit human confirmation. Every decision is
-auditable.
+An agent reviews transactions for regulatory
+violations. It can query databases and generate
+reports — but cannot approve transactions, modify
+records, or notify regulators without explicit
+human confirmation. Every decision is auditable.
+
 ```bash
 agenl run agents/compliance_checker.agent
 ```
 
-### 3. Research pipeline — enterprise knowledge work
+**3. Space mission risk intelligence — ORBITAL**
 
-A three-agent team where a researcher gathers findings,
-an analyst structures the data, and a writer produces
-the report. Each agent has its own enforced contract.
-The pipeline is defined in a single file.
+A 12-agent pipeline where each agent is
+mathematically verified. LaunchWindowAnalyser
+cannot approve a launch — not by policy, by
+theorem. OrbitalRiskAgent cannot approve a
+maneuver. Secret telemetry cannot appear in public
+reports. Proven by Lean 4.
+
 ```bash
-agenl pipeline agents/research_team.pipeline
+agenl pipeline agents/orbital/pipeline.agenl
 ```
-
----
-
-## What an agent contract looks like
-```
-agent IncidentHandler {
-  goal: "Detect, triage and escalate system incidents"
-  persona: "calm, methodical, always escalates when uncertain"
-
-  tools {
-    allow:   [query_database, read_file, summarise]
-    block:   [delete_file, modify_config, restart_service]
-    confirm: [send_email, page_oncall, rollback_deployment]
-  }
-
-  escalation {
-    trigger:  on_uncertain
-    notify:   human_in_loop
-    context:  full_trace
-    timeout:  30_minutes
-    fallback: stop_and_log
-  }
-
-  trust: low
-  on_uncertain: escalate
-  on_error:     escalate
-}
-```
-
-**What each section enforces:**
-
-| Section | What it does |
-|---|---|
-| `tools.allow` | Agent can use these freely |
-| `tools.block` | Hard removed — model never sees these as options |
-| `tools.confirm` | Agent must get human approval before proceeding |
-| `escalation` | What happens when agent hits uncertainty or failure |
-| `trust` | Autonomy level — low means confirm frequently |
-| `on_uncertain` | Escalate rather than guess |
-| `on_error` | Escalate rather than retry blindly |
-
----
-
-## How AGENL is different
-
-| | LangChain | CrewAI | AutoGen | **AGENL** |
-|---|---|---|---|---|
-| Agent rules defined by | Python code | Python code | Config + code | Structured DSL |
-| Rules enforced by | Developer discipline | Developer discipline | Framework conventions | **Runtime — structurally** |
-| Natural language input | No | No | No | **Yes — built in** |
-| Audit trail | No | No | No | **Yes — every .agent file** |
-| Human escalation | Manual to build | Manual to build | Partial | **First-class feature** |
-| Non-developer friendly | No | No | No | **Yes — readable contracts** |
-| Composable via inheritance | No | No | No | **Yes — extends keyword** |
-
-**The key difference:** LangChain, CrewAI, and AutoGen are
-frameworks for building agents. AGENL is the governance layer
-that sits above any framework — defining what agents are allowed
-to do and enforcing it structurally.
 
 ---
 
 ## Formal Verification — Lean 4
 
-AGENL uses Lean 4 to generate mathematical proofs of contract correctness. These are not tests — they are theorems. Once verified, they are mathematically certain.
+AGENL uses Lean 4 to generate mathematical proofs
+of contract correctness. These are not tests — they
+are theorems. Once verified by Lean's kernel, they
+are mathematically certain. True without exception
+in every possible execution.
 
-### Current theorems (all verified ✓)
+### Verified Theorems — Core Library
 
-**Theorem 1 — No allow/block overlap**  
-No tool can appear in both the allowed list and the blocked list simultaneously.
+All 5 AGENL Lean modules verified ✓
 
-**Theorem 2 — Low trust forces safe uncertainty policy**  
-When trust level is low, on_uncertain must be escalate or say_so — never best_guess.
+**AGENL/InfoFlow.lean — Information flow security**
+- `secret_cannot_flow_to_public` — Secret data
+  cannot flow to Public destinations. Proven.
+- `flow_transitive` — Information flow respects
+  label ordering across all pipeline stages.
+- `all_public_excludes_secret` — Public memory
+  contains no Secret items.
 
-**Theorem 3 — Required fields present**  
-All required contract fields are present and non-empty. An incomplete contract cannot be deployed.
+**AGENL/Effects.lean — Free Monad execution model**
+- `AgentProgram` Free Monad over `ToolEffect`
+- `SafeProg` inductive safety proof
+- Agents modelled as mathematical objects
 
-Proof files: `proofs/incident_handler.lean`, `proofs/research_bot.lean`
+**AGENL/Liveness.lean — Agent liveness**
+- `pure_always_completes` — Pure computations
+  always reach completion.
+- `effect_completes_if_allowed` — Effectful steps
+  complete if the tool is in the allow list.
 
-### Planned enhancements (online phase)
+**AGENL/Memory.lean — Formal memory model**
+- `public_filter_no_secret` — Filtering for
+  Public items excludes all Secret items.
+- `add_public_preserves_secrets` — Adding Public
+  items does not change Secret memory contents.
 
-- Free Monad execution model — agent programs as monadic computations over ToolEffect
-- Information flow proofs — secret data cannot reach public outputs
-- Liveness proofs — governed agents can still complete their tasks
-- Formal memory model — DataLabel types with provable flow rules
+**AGENL/ValidAgent.lean — Typeclass architecture**
+- `ValidAgent` typeclass: no_overlap,
+  allow_nonempty, trust_bounded
+- `ValidPipeline` typeclass: composition property
+  across all pipeline agents
+- Inheritance is automatic — Lean enforces base
+  properties in all derived instances
+
+### Verified Theorems — ORBITAL Domain
+
+**proofs/orbital/launch_window_analyser.lean**
+- `launch_approval_blocked` — approve_launch is
+  in the block list. Mathematical fact.
+- `launch_approval_not_allowed` — approve_launch
+  is not in the allow list. Mathematical fact.
+- `launch_no_overlap` — No tool in both lists.
+- `launch_window_valid_execution` — A valid
+  cautious execution exists with trust = 0.
+
+**proofs/orbital/orbital_risk_agent.lean**
+- `orbital_maneuver_blocked` — approve_maneuver
+  is mathematically blocked.
+- `orbital_plan_modification_blocked` —
+  modify_orbit_plan is mathematically blocked.
+
+**proofs/orbital/risk_synthesiser.lean**
+- `risk_no_secret_to_public` — Secret input
+  cannot produce Public output. Information flow
+  theorem.
+- `risk_synthesis_label_monotone` — Combined
+  output label is at least as high as any input.
 
 ---
 
-## CLI commands
+## ORBITAL — Space Mission Risk Intelligence
+
+ORBITAL is a 12-agent verified pipeline
+demonstrating AGENL at aerospace scale.
+Layer 1 — Program Management
+MissionContextAgent → ScheduleAnalyser →
+DependencyMapper → MilestonePredictor →
+DelayRiskDetector
+Layer 2 — Space Domain
+SubsystemRelationships → LaunchWindowAnalyser →
+OrbitalRiskAgent
+Layer 3 — Intelligence and Synthesis
+RiskSynthesiser → ExecutiveReportAgent →
+EscalationCoordinator → KnowledgeMemoryAgent
+Feedback Arrow: SubsystemRelationships →
+ScheduleAnalyser (terminate_after_one_pass)
+
+Every agent in the pipeline:
+- Has a mathematically verified contract
+- Cannot call blocked tools — proven impossible
+- Carries DataLabels on all data items (taint tracking)
+- Fails safe — on_failure: stop_and_escalate
+
+---
+
+## How AGENL is Different
+
+| | LangChain | CrewAI | AutoGen | AGENL |
+|---|---|---|---|---|
+| Rules defined by | Python code | Python code | Config | Structured DSL |
+| Rules enforced by | Developer discipline | Developer discipline | Framework | Runtime + Lean proofs |
+| Mathematical proof | No | No | No | Yes — Lean 4 |
+| Audit trail | No | No | No | Yes — every contract |
+| Human escalation | Manual | Manual | Partial | First-class feature |
+| Non-developer friendly | No | No | No | Yes |
+| Composable inheritance | No | No | No | Yes — extends keyword |
+
+The key difference: LangChain, CrewAI, and AutoGen
+are frameworks for building agents. AGENL is the
+governance and verification layer that sits above
+any framework.
+
+---
+
+## Agent Inheritance
+
+Build a governance hierarchy. Define rules once at
+the base level. Specialised agents inherit and extend.
+agent BaseEnterpriseAgent {
+trust: low
+on_uncertain: escalate
+on_error: escalate
+tools {
+block: [delete_file, modify_config]
+}
+}
+agent IncidentHandler extends BaseEnterpriseAgent {
+goal: "Handle IT incidents"
+tools.allow: [query_database, create_ticket]
+tools.confirm: [page_oncall, rollback_deployment]
+}
+agent ComplianceChecker extends BaseEnterpriseAgent {
+goal: "Review compliance violations"
+tools.allow: [query_database, export_pdf]
+tools.confirm: [flag_transaction, notify_regulator]
+}
+
+Update BaseEnterpriseAgent once — every agent that
+extends it updates automatically. Lean proves
+inherited safety properties hold in all derived
+instances automatically.
+
+---
+
+## CLI Commands
+
 ```bash
 agenl convert "describe your agent in plain English"
 agenl run     agents/my_agent.agent
@@ -206,64 +321,41 @@ agenl pull     AgentName
 
 ---
 
-## Agent inheritance
-
-Build a governance hierarchy. Define rules once at the base
-level. Specialised agents inherit and extend.
-```
-agent BaseEnterpriseAgent {
-  trust: low
-  on_uncertain: escalate
-  on_error: escalate
-  tools {
-    block: [delete_file, modify_config]
-  }
-}
-
-agent IncidentHandler extends BaseEnterpriseAgent {
-  goal: "Handle IT incidents"
-  tools.allow: [query_database, create_ticket]
-  tools.confirm: [page_oncall, rollback_deployment]
-}
-
-agent ComplianceChecker extends BaseEnterpriseAgent {
-  goal: "Review compliance violations"
-  tools.allow: [query_database, export_pdf]
-  tools.confirm: [flag_transaction, notify_regulator]
-}
-```
-
-Update `BaseEnterpriseAgent` once — every agent that
-extends it updates automatically.
-
----
-
-## Project structure
-```
+## Project Structure
 agenl/
-│
-├── agenl/
-│   ├── parser.py      — Lark grammar, validates .agent files
-│   ├── converter.py   — Natural language → AGENL via Claude
-│   ├── runtime.py     — Enforces contracts structurally
-│   └── cli.py         — 8 CLI commands
+├── AGENL/                    ← Lean 4 verified library
+│   ├── InfoFlow.lean         ← Information flow proofs
+│   ├── Effects.lean          ← Free Monad model
+│   ├── Liveness.lean         ← Liveness proofs
+│   ├── Memory.lean           ← Formal memory model
+│   └── ValidAgent.lean       ← ValidAgent typeclass
 │
 ├── agents/
-│   ├── incident_handler.agent    — IT operations example
-│   ├── compliance_checker.agent  — Financial services example
-│   ├── research_bot.agent        — Research pipeline example
-│   └── senior_analyst.agent      — Inheritance example
+│   ├── incident_handler.agent
+│   ├── compliance_checker.agent
+│   ├── research_bot.agent
+│   └── orbital/              ← 12 ORBITAL agents
+│       ├── pipeline.agenl
+│       └── [12 agent files]
 │
-├── registry/          — Local agent registry
-├── vscode-extension/  — Syntax highlighting for .agent files
-└── setup.py           — pip install -e .
-```
-
----
-
-## Live demo
-
-[![AGENL Demo](https://asciinema.org/a/a4SNeFFyCzjKqcPZ.svg)](https://asciinema.org/a/a4SNeFFyCzjKqcPZ)
+├── proofs/
+│   ├── incident_handler.lean
+│   ├── research_bot.lean
+│   └── orbital/              ← ORBITAL proofs
+│       ├── mission_context_agent.lean
+│       ├── launch_window_analyser.lean
+│       ├── orbital_risk_agent.lean
+│       └── risk_synthesiser.lean
+│
+├── agenl/
+│   ├── parser.py             ← Lark grammar
+│   ├── converter.py          ← Natural language → AGENL
+│   ├── runtime.py            ← Contract enforcement
+│   └── cli.py                ← 8 CLI commands
+│
+├── lakefile.toml             ← Lean 4 package config
+├── LICENSE                   ← BSL 1.1
+└── README.md
 
 ---
 
@@ -271,22 +363,33 @@ agenl/
 
 - [x] Phase 1 — Natural language converter, parser, runtime
 - [x] Phase 2 — CLI, agent inheritance, multi-agent pipelines
-- [x] Phase 3 — VS Code extension, agent registry, public launch
-- [x] Phase 4 — Live web dashboard (localhost:5001), human-in-loop escalation, escalation_log.json audit trail
-- [ ] Phase 5 — Cloud hosting, Lean library (Free Monad, information flow, liveness proofs), ORBITAL aerospace platform
+- [x] Phase 3 — VS Code extension, agent registry
+- [x] Phase 4 — Live dashboard, human-in-loop escalation
+- [x] Phase 5 — Lean library: InfoFlow, Effects, Liveness, Memory, ValidAgent
+- [x] Phase 6 — ORBITAL: 12-agent verified aerospace pipeline
+- [ ] Phase 7 — safeRun: connect Lean proofs to live agent execution
+- [ ] Phase 8 — Cloud hosting, enterprise integrations
+- [ ] Phase 9 — Certification tooling for DO-178C compliance
 
 ---
 
-## Discussion
+## Hackathon
 
-[Hacker News](https://news.ycombinator.com/item?id=47481950)
+**LeanLang for Verified Autonomy**
+IISc Bangalore | April 19 – May 1, 2026
+Mentor: Prof. Siddhartha Gadgil, IISc + Emergence AI
 
 ---
 
 ## License
 
-MIT — free to use, modify, and build on.
+Business Source License 1.1
+Commercial use requires a license from the author.
+Community use, research, and contributions are free.
+See LICENSE for full terms.
 
 ---
 
-*AGENL — because enterprise AI agents need contracts, not wishes.*
+*AGENL — because enterprise AI agents need
+contracts, not wishes. And contracts need proofs,
+not hope.*
