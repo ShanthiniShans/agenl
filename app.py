@@ -22,7 +22,7 @@ BASE_DIR = Path(__file__).resolve().parent
 AGENTS_DIR = BASE_DIR / "agents"
 ESCALATION_LOG_PATH = BASE_DIR / "escalation_log.json"
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder=str(BASE_DIR / "templates"))
 
 _state_lock = threading.Lock()
 RUN_STATE: dict[str, Any] = {
