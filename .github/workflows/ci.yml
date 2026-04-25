@@ -25,11 +25,11 @@ jobs:
       - name: Verify Lean proof files exist
         run: |
           echo "Checking AGENL core modules..."
-          ls AGENL/InfoFlow.lean
-          ls AGENL/Effects.lean
-          ls AGENL/Liveness.lean
-          ls AGENL/Memory.lean
-          ls AGENL/ValidAgent.lean
+          ls agenl/InfoFlow.lean
+          ls agenl/Effects.lean
+          ls agenl/Liveness.lean
+          ls agenl/Memory.lean
+          ls agenl/ValidAgent.lean
           echo "Checking ORBITAL proof files..."
           ls proofs/orbital/mission_context_agent.lean
           ls proofs/orbital/launch_window_analyser.lean
