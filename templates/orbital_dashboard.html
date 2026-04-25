@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ORBITAL — Mission Risk Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body { background: #080c14; color: #e2e8f0; font-family: 'Space Grotesk', sans-serif; }
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #0d1420; }
+::-webkit-scrollbar-thumb { background: #243347; border-radius: 3px; }
+input[type=range] { height: 4px; -webkit-appearance: none; appearance: none; background: transparent; }
+input[type=range]::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: #1a2535; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 14px; height: 14px; border-radius: 50%; margin-top: -5px; cursor: pointer; }
+select option { background: #111927; }
+@keyframes fadeSlideIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes glow { 0%, 100% { box-shadow: 0 0 6px #10b981; } 50% { box-shadow: 0 0 14px #10b981, 0 0 20px #10b98155; } }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback } = React;
+
+// ── Colours ──────────────────────────────────────────────────────────────────
+const C = {
+  bg: '#080c14', s1: '#0d1420', s2: '#111927', s3: '#1a2535',
+  border: '#1e2d42', border2: '#243347',
+  text: '#e2e8f0', textSec: '#7a9ab8', textMut: '#4a6785',
+  blue: '#3b9eff', amber: '#f59e0b', green: '#10b981',
+  red: '#ef4444', purple: '#a78bfa', cyan: '#22d3ee',
+};
+
+// ── Nav items ─────────────────────────────────────────────────────────────────
+const NAV = [
+  { id: 'setup',       icon: '⬡', label: 'Mission Setup' },
+  { id: 'pipeline',    icon: '◈', label: 'Live Pipeline' },
+  { id: 'schedule',    icon: '▦', label: 'Program Schedule' },
+  { id: 'subsystems',  icon: '◉', label: 'Subsystems' },
+  { id: 'launch',      icon: '△', label: 'Launch Window' },
+  { id: 'orbital',     icon: '○', label: 'Orbital Risk' },
+  { id: 'escalations', icon: '⚑', label: 'Escalations' },
+  { id: 'report',      icon: '▤', label: 'Executive Report' },
+];
+
+// ── Shared components ─────────────────────────────────────────────────────────
+function Sidebar({ page, setPage, pipelineComplete, missionName }) {
+  return (
+    <div style={{ width: 220, flexShrink: 0, background: C.s1, borderRight: `1px solid ${C.border}`, display: 'flex', flexDirection: 'column', height: '100vh', position: 'sticky', top: 0 }}>
+      <div style={{ padding: '20px 18px 16px', borderBottom: `1px solid ${C.border}` }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+          <div style={{ width: 28, height: 28, borderRadius: '50%', background: `radial-gradient(circle at 35% 35%, ${C.blue}, #0a1a3a)`, boxShadow: `0 0 12px ${C.blue}55`, flexShrink: 0 }} />
+          <span style={{ fontFamily: 'Space Grotesk, sans-serif', fontWeight: 700, fontSize: 15, color: C.text, letterSpacing: 2 }}>ORBITAL</span>
+        </div>
+        <div style={{ fontSize: 10, color: C.textMut, fontFamily: 'JetBrains Mono, monospace', letterSpacing: 1 }}>MISSION RISK INTELLIGENCE</div>
+        {missionName && <div style={{ marginTop: 10, fontSize: 11, color: C.blue, fontFamily: 'Space Grotesk, sans-serif', fontWeight: 600 }}>{missionName}</div>}
+      </div>
+      <nav style={{ flex: 1, padding: '12px 0' }}>
+        {NAV.map(item => {
+          const locked = !pipelineComplete && item.id !== 'setup' && item.id !== 'pipeline';
+          const active = page === item.id;
+          return (
+            <div key={item.id} onClick={() => !locked && setPage(item.id)}
+              style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 18px', cursor: locked ? 'not-allowed' : 'pointer', background: active ? `${C.blue}18` : 'transparent', borderLeft: active ? `2px solid ${C.blue}` : '2px solid transparent', opacity: locked ? 0.35 : 1, transition: 'all 0.15s', pointerEvents: locked ? 'none' : 'auto' }}>
+              <span style={{ fontSize: 13, color: active ? C.blue : C.textMut }}>{item.icon}</span>
+              <span style={{ fontSize: 12, fontFamily: 'Space Grotesk, sans-serif', fontWeight: active ? 600 : 400, color: active ? C.text : C.textSec }}>{item.label}</span>
+            </div>
+          );
+        })}
+      </nav>
+      <div style={{ padding: '14px 18px', borderTop: `1px solid ${C.border}`, fontSize: 10, color: C.textMut, fontFamily: 'JetBrains Mono, monospace' }}>v2.4.1 · CLASSIFIED</div>
+    </div>
+  );
+}
+
+function StatusBadge({ status }) {
+  const map = {
+    'On Track': { bg: '#10b98122', c: '#10b981' }, 'At Risk': { bg: '#f59e0b22', c: '#f59e0b' },
+    'Critical': { bg: '#ef444422', c: '#ef4444' }, 'GO': { bg: '#10b98122', c: '#10b981' },
+    'NO-GO': { bg: '#ef444422', c: '#ef4444' }, 'LOW': { bg: '#10b98122', c: '#10b981' },
+    'MEDIUM': { bg: '#f59e0b22', c: '#f59e0b' }, 'HIGH': { bg: '#ef444422', c: '#ef4444' },
+    'P1': { bg: '#ef444422', c: '#ef4444' }, 'P2': { bg: '#f59e0b22', c: '#f59e0b' },
+    'Queued': { bg: '#4a678522', c: '#4a6785' }, 'Running': { bg: '#3b9eff22', c: '#3b9eff' },
+    'Complete': { bg: '#10b98122', c: '#10b981' }, 'Escalated': { bg: '#ef444422', c: '#ef4444' },
+    'Open': { bg: '#ef444422', c: '#ef4444' }, 'Resolved': { bg: '#10b98122', c: '#10b981' },
+    'Recommended': { bg: '#f59e0b22', c: '#f59e0b' }, 'Contingency': { bg: '#4a678522', c: '#4a6785' },
+  };
+  const s = map[status] || { bg: '#4a678522', c: '#4a6785' };
+  return <span style={{ background: s.bg, color: s.c, border: `1px solid ${s.c}44`, borderRadius: 4, padding: '2px 7px', fontSize: 10, fontFamily: 'JetBrains Mono, monospace', fontWeight: 600, letterSpacing: 0.5 }}>{status}</span>;
+}
+
+function Card({ children, style = {} }) {
+  return <div style={{ background: C.s2, border: `1px solid ${C.border}`, borderRadius: 8, padding: '16px 18px', ...style }}>{children}</div>;
+}
+
+function CardTitle({ children, action }) {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+      <span style={{ fontSize: 11, fontFamily: 'Space Grotesk, sans-serif', fontWeight: 600, color: C.textMut, letterSpacing: 1, textTransform: 'uppercase' }}>{children}</span>
+      {action}
+    </div>
+  );
+}
+
+function PageHeader({ title, subtitle, badge }) {
+  return (
+    <div style={{ marginBottom: 24 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4 }}>
+        <h1 style={{ margin: 0, fontSize: 22, fontFamily: 'Space Grotesk, sans-serif', fontWeight: 700, color: C.text }}>{title}</h1>
+        {badge && <StatusBadge status={badge} />}
+      </div>
+      {subtitle && <p style={{ margin: 0, fontSize: 12, color: C.textSec, fontFamily: 'Space Grotesk, sans-serif' }}>{subtitle}</p>}
+    </div>
+  );
+}
+
+function Input({ label, value, onChange, type = 'text', options }) {
+  const base = { width: '100%', background: C.s3, border: `1px solid ${C.border2}`, borderRadius: 6, padding: '8px 12px', color: C.text, fontFamily: 'Space Grotesk, sans-serif', fontSize: 13, outline: 'none', boxSizing: 'border-box' };
+  return (
+    <div style={{ marginBottom: 14 }}>
+      <label style={{ display: 'block', fontSize: 11, color: C.textSec, marginBottom: 5, fontWeight: 500 }}>{label}</label>
+      {options ? (
+        <select value={value} onChange={e => onChange(e.target.value)} style={{ ...base, cursor: 'pointer' }}>
+          {options.map(o => <option key={o.value || o} value={o.value || o}>{o.label || o}</option>)}
+        </select>
+      ) : (
+        <input type={type} value={value} onChange={e => onChange(e.target.value)} style={base} />
+      )}
+    </div>
+  );
+}
+
+function Slider({ label, value, onChange }) {
+  const col = value >= 70 ? C.green : value >= 40 ? C.amber : C.red;
+  return (
+    <div style={{ marginBottom: 14 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+        <label style={{ fontSize: 11, color: C.textSec, fontWeight: 500 }}>{label}</label>
+        <span style={{ fontSize: 11, color: col, fontFamily: 'JetBrains Mono, monospace', fontWeight: 600 }}>{value}%</span>
+      </div>
+      <input type="range" min="0" max="100" value={value} onChange={e => onChange(Number(e.target.value))}
+        style={{ width: '100%', accentColor: col, cursor: 'pointer' }} />
+    </div>
+  );
+}
+
+function CircularGauge({ value, size = 180 }) {
+  const r = (size / 2) - 16;
+  const circ = 2 * Math.PI * r;
+  const progress = (value / 100) * circ;
+  const col = value >= 70 ? C.green : value >= 40 ? C.amber : C.red;
+  return (
+    <svg width={size} height={size}>
+      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={C.s3} strokeWidth={10} />
+      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={col}
+        strokeWidth={10} strokeDasharray={`${progress} ${circ}`}
+        strokeLinecap="round" transform={`rotate(-90 ${size/2} ${size/2})`}
+        style={{ transition: 'stroke-dasharray 1s ease', filter: `drop-shadow(0 0 6px ${col}88)` }} />
+      <text x={size/2} y={size/2 - 8} textAnchor="middle" fill={col} fontSize={28} fontFamily="JetBrains Mono, monospace" fontWeight="700">{value}%</text>
+      <text x={size/2} y={size/2 + 12} textAnchor="middle" fill={C.textMut} fontSize={9} fontFamily="Space Grotesk, sans-serif" letterSpacing="1">READINESS</text>
+    </svg>
+  );
+}
+
+function SystemNote({ children }) {
+  return (
+    <div style={{ background: `${C.amber}11`, border: `1px solid ${C.amber}44`, borderRadius: 6, padding: '10px 14px', display: 'flex', gap: 10, alignItems: 'flex-start', marginTop: 12 }}>
+      <span style={{ color: C.amber, fontSize: 12, flexShrink: 0 }}>⚠</span>
+      <p style={{ margin: 0, fontSize: 11, color: C.amber, fontFamily: 'Space Grotesk, sans-serif', lineHeight: 1.5 }}>{children}</p>
+    </div>
+  );
+}
+
+function HealthBar({ label, value }) {
+  const col = value >= 70 ? C.green : value >= 40 ? C.amber : C.red;
+  return (
+    <div style={{ marginBottom: 10 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+        <span style={{ fontSize: 11, color: C.textSec }}>{label}</span>
+        <span style={{ fontSize: 11, color: col, fontFamily: 'JetBrains Mono, monospace', fontWeight: 600 }}>{value}%</span>
+      </div>
+      <div style={{ height: 4, background: C.s3, borderRadius: 2, overflow: 'hidden' }}>
+        <div style={{ width: `${value}%`, height: '100%', background: col, borderRadius: 2, transition: 'width 0.8s ease' }} />
+      </div>
+    </div>
+  );
+}
+
+function AgentCard({ agent }) {
+  const statusColor = { Queued: C.textMut, Running: C.blue, Complete: C.green, Escalated: C.red }[agent.status] || C.textMut;
+  return (
+    <div style={{ background: C.s2, border: `1px solid ${agent.status === 'Running' ? C.blue + '55' : C.border}`, borderRadius: 8, padding: '14px 16px', marginBottom: 10, boxShadow: agent.status === 'Running' ? `0 0 16px ${C.blue}22` : 'none', transition: 'all 0.3s ease', animation: 'fadeSlideIn 0.4s ease' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+        <div>
+          <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontWeight: 600, fontSize: 13, color: C.text }}>{agent.name}</div>
+          <div style={{ fontSize: 10, color: C.textMut, fontFamily: 'JetBrains Mono, monospace', marginTop: 2 }}>Layer {agent.layer}</div>
+        </div>
+        <StatusBadge status={agent.status} />
+      </div>
+      {(agent.status === 'Complete' || agent.status === 'Escalated') && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginTop: 8 }}>
+          {[['INPUT', agent.input, C.textSec], ['DECISION', agent.decision, C.text], ['OUTPUT', agent.output, statusColor]].map(([lbl, val, col]) => (
+            <div key={lbl} style={{ background: C.s3, borderRadius: 5, padding: '8px 10px' }}>
+              <div style={{ fontSize: 9, color: C.textMut, fontFamily: 'JetBrains Mono, monospace', marginBottom: 3 }}>{lbl}</div>
+              <div style={{ fontSize: 10, color: col, fontFamily: 'Space Grotesk, sans-serif', lineHeight: 1.4 }}>{val}</div>
+            </div>
+          ))}
+        </div>
+      )}
+      {agent.blockedAction && (
+        <div style={{ marginTop: 8, background: `${C.red}11`, border: `1px solid ${C.red}33`, borderRadius: 5, padding: '6px 10px' }}>
+          <span style={{ fontSize: 9, color: C.red, fontFamily: 'JetBrains Mono, monospace' }}>BLOCKED ACTION: </span>
+          <span style={{ fontSize: 10, color: C.red, fontFamily: 'Space Grotesk, sans-serif' }}>{agent.blockedAction} — prevented by system safety layer</span>
+        </div>
+      )}
+      {agent.status === 'Running' && (
+        <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <div style={{ width: 6, height: 6, borderRadius: '50%', background: C.blue, animation: 'pulse 1s infinite' }} />
+          <span style={{ fontSize: 10, color: C.blue, fontFamily: 'JetBrains Mono, monospace' }}>Processing...</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Agent data template ───────────────────────────────────────────────────────
+const buildAgents = (d) => [
+  { id: 1, name: 'DataIngestionAgent', layer: 1, input: `Mission: ${d.missionName}, Orbit: ${d.orbit}`, decision: 'All required fields present. Data validated.', output: 'Structured mission payload — Internal', blockedAction: null },
+  { id: 2, name: 'ScheduleAnalyser', layer: 1, input: 'Mission payload + milestone health scores', decision: `Avg milestone health ${Math.round(d.milestones.reduce((a, b) => a + b.value, 0) / 5)}%. ${d.milestones.filter(m => m.value < 60).length} milestones below threshold.`, output: `Schedule risk: ${d.milestones.filter(m => m.value < 60).length > 2 ? 'HIGH' : 'MEDIUM'}. Delay probability flagged.`, blockedAction: null },
+  { id: 3, name: 'WeatherMonitor', layer: 1, input: `Weather probability: ${d.weatherProb}%`, decision: d.weatherProb > 60 ? 'Weather exceeds acceptable threshold. Flag for launch window.' : 'Weather within acceptable parameters.', output: d.weatherProb > 60 ? 'WEATHER RISK — escalate to LaunchWindowAgent' : 'Weather: nominal', blockedAction: null },
+  { id: 4, name: 'OrbitalMechanicsAgent', layer: 1, input: `Conjunction events: ${d.conjunctions}, Closest approach: ${d.closestApproach}km`, decision: d.conjunctions > 3 ? 'Multiple conjunction events detected. Risk elevated.' : 'Conjunction profile within bounds.', output: `Collision probability: ${d.conjunctions > 3 ? 'ELEVATED' : 'LOW'}. Approach margin: ${d.closestApproach}km`, blockedAction: null },
+  { id: 5, name: 'SubsystemHealthAgent', layer: 2, input: 'Subsystem health readings from mission payload', decision: `${d.subsystems.filter(s => s.value < 60).length} subsystems below 60%. Critical path analysis initiated.`, output: `Health matrix computed. ${d.subsystems.filter(s => s.value < 40).map(s => s.name).join(', ') || 'No'} critical failures.`, blockedAction: null },
+  { id: 6, name: 'SubsystemRelationships', layer: 2, input: 'Health matrix from SubsystemHealthAgent', decision: (d.subsystems.find(s => s.name === 'Thermal')?.value || 80) < 60 ? 'Thermal degradation detected. Power distribution cascade identified.' : 'No critical cascades detected.', output: 'Feedback signal sent to ScheduleAnalyser (runs once). Cascade map produced.', blockedAction: null },
+  { id: 7, name: 'VendorRiskAgent', layer: 2, input: `Vendor delay: ${d.vendorDelay} days`, decision: d.vendorDelay > 5 ? `${d.vendorDelay}-day vendor slip exceeds tolerance. Dependencies at risk.` : 'Vendor delay within tolerance.', output: d.vendorDelay > 5 ? `P${d.vendorDelay > 10 ? 1 : 2} vendor risk. Cascade to 3 dependencies.` : 'Vendor risk: nominal', blockedAction: null },
+  { id: 8, name: 'LaunchWindowAgent', layer: 2, input: 'Weather, orbital clearance, subsystem status', decision: `Primary window ${d.weatherProb > 60 || d.subsystems.filter(s => s.value < 60).length > 2 ? 'at risk' : 'viable'}. Backup computed.`, output: 'Window analysis complete. GO/NO-GO inputs prepared.', blockedAction: null },
+  { id: 9, name: 'RiskAggregatorAgent', layer: 3, input: 'All Layer 1 + 2 outputs', decision: 'Aggregating risk signals across all domains. Weighted risk score computed.', output: `Mission risk level: ${d.subsystems.filter(s => s.value < 60).length + d.milestones.filter(m => m.value < 60).length > 4 ? 'HIGH' : d.subsystems.filter(s => s.value < 60).length + d.milestones.filter(m => m.value < 60).length > 2 ? 'MEDIUM' : 'LOW'}`, blockedAction: null },
+  { id: 10, name: 'EscalationRouterAgent', layer: 3, input: 'Aggregated risk signals', decision: `${d.milestones.filter(m => m.value < 40).length + (d.vendorDelay > 5 ? 1 : 0) + (d.conjunctions > 3 ? 1 : 0)} items require escalation routing.`, output: 'Escalations routed to Mission Director and Systems Engineer.', blockedAction: 'auto_approve_launch' },
+  { id: 11, name: 'LaunchReadinessAgent', layer: 3, input: 'Full risk picture from all agents', decision: 'GO/NO-GO assessment based on all inputs. Human sign-off required for final authorisation.', output: 'Readiness package prepared. Awaiting human authorisation.', blockedAction: 'issue_launch_authorisation' },
+  { id: 12, name: 'ExecutiveReportAgent', layer: 3, input: 'Complete mission risk picture', decision: 'Generating executive summary. Classifying as Public output.', output: 'Executive report generated — Public', blockedAction: null },
+];
+
+// ── Voice narration ───────────────────────────────────────────────────────────
+const PAGE_NAR = {
+  setup: "Mission Setup. Enter your mission parameters — target orbit, days to launch, mission phase, and milestone and subsystem health scores. When you're ready, click Run Analysis to deploy all twelve agents.",
+  pipeline: "Live Pipeline. Twelve A.I. agents are now being deployed in sequence. Watch each agent's input, decision, and output appear as they complete. The live log on the right tracks all activity in real time.",
+  schedule: "Program Schedule. Milestone progress bars are populated from your health slider inputs. Below the bars you'll see delay risk signals flagged by the Schedule Analyser and Vendor Risk Agent.",
+  subsystems: "Subsystems. Eight subsystem health cards display current status with colour coding — green for nominal, amber for degraded, red for critical.",
+  launch: "Launch Window. The circular readiness gauge reflects your overall GO status. All launch authorisation requires human sign-off.",
+  orbital: "Orbital Risk. This page summarises conjunction events in the last twenty-four hours, closest approach distance, and estimated collision probability.",
+  escalations: "Escalations. Open escalations raised by agents are listed by priority. All approvals require human confirmation.",
+  report: "Executive Report. Auto-generated by the Executive Report Agent after the full pipeline completes.",
+};
+
+const AGENT_NAR_START = {
+  DataIngestionAgent: "Data Ingestion Agent is running. Validating mission payload.",
+  ScheduleAnalyser: "Schedule Analyser is running. Computing delay risk across all five milestones.",
+  WeatherMonitor: "Weather Monitor is running. Assessing launch window weather probability.",
+  OrbitalMechanicsAgent: "Orbital Mechanics Agent is running. Analysing conjunction events.",
+  SubsystemHealthAgent: "Subsystem Health Agent is running. Scoring all subsystems.",
+  SubsystemRelationships: "Subsystem Relationships Agent is running. Mapping cross-system dependencies.",
+  VendorRiskAgent: "Vendor Risk Agent is running. Assessing vendor delay impact.",
+  LaunchWindowAgent: "Launch Window Agent is running. Synthesising weather and orbital status.",
+  RiskAggregatorAgent: "Risk Aggregator Agent is running. Combining all signals into a unified risk score.",
+  EscalationRouterAgent: "Escalation Router Agent is running. Routing flagged risks to human authority.",
+  LaunchReadinessAgent: "Launch Readiness Agent is running. Producing the final readiness assessment.",
+  ExecutiveReportAgent: "Executive Report Agent is running. Generating the Public-labelled executive summary.",
+};
+const AGENT_NAR_DONE = {
+  DataIngestionAgent: "Data Ingestion complete. Mission payload validated.",
+  ScheduleAnalyser: "Schedule analysis complete. Risk signals produced.",
+  WeatherMonitor: "Weather assessment complete.",
+  OrbitalMechanicsAgent: "Orbital mechanics analysis complete. Conjunction profile assessed.",
+  SubsystemHealthAgent: "Subsystem health assessment complete.",
+  SubsystemRelationships: "Subsystem relationship analysis complete. Feedback signal sent to Schedule Analyser.",
+  VendorRiskAgent: "Vendor risk assessment complete.",
+  LaunchWindowAgent: "Launch window analysis complete.",
+  RiskAggregatorAgent: "Risk aggregation complete. Mission risk level determined.",
+  EscalationRouterAgent: "Escalation routing complete. Note: auto-approve-launch was blocked by the safety layer.",
+  LaunchReadinessAgent: "Launch readiness assessment complete. Awaiting human authorisation.",
+  ExecutiveReportAgent: "Executive report generated. Pipeline complete. All pages are now populated.",
+};
+
+const DEFAULT = {
+  missionName: 'ASTRA-7', orbit: 'LEO-550km', daysToLaunch: '90', phase: 'Integration',
+  milestones: [
+    { name: 'Systems Integration', value: 72 }, { name: 'Avionics Test', value: 48 },
+    { name: 'Propulsion Integration', value: 85 }, { name: 'Thermal Qualification', value: 31 },
+    { name: 'Launch Rehearsal', value: 65 },
+  ],
+  subsystems: [
+    { name: 'Thermal', value: 38 }, { name: 'Propulsion', value: 76 },
+    { name: 'Power', value: 82 }, { name: 'Avionics', value: 59 },
+    { name: 'Communications', value: 91 },
+  ],
+  conjunctions: 4, closestApproach: 3.2, vendorDelay: 8, weatherProb: 55,
+};
+
+// ── Pages ─────────────────────────────────────────────────────────────────────
+function MissionSetupPage({ data, setData, onRun }) {
+  return (
+    <div style={{ maxWidth: 820, margin: '0 auto' }}>
+      <PageHeader title="Mission Setup" subtitle="Define mission parameters. All 12 agents will analyse the inputs when you run the pipeline." />
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+        <div>
+          <Card style={{ marginBottom: 16 }}>
+            <CardTitle>Mission Identity</CardTitle>
+            <Input label="Mission Name" value={data.missionName} onChange={v => setData(p => ({ ...p, missionName: v }))} />
+            <Input label="Target Orbit" value={data.orbit} onChange={v => setData(p => ({ ...p, orbit: v }))}
+              options={[{ value: 'LEO-400km', label: 'LEO — 400 km' }, { value: 'LEO-550km', label: 'LEO — 550 km' }, { value: 'MEO-8000km', label: 'MEO — 8,000 km' }, { value: 'GEO-35786km', label: 'GEO — 35,786 km' }]} />
+            <Input label="Days to Launch" value={data.daysToLaunch} onChange={v => setData(p => ({ ...p, daysToLaunch: v }))} type="number" />
+            <Input label="Mission Phase" value={data.phase} onChange={v => setData(p => ({ ...p, phase: v }))}
+              options={['Design', 'Integration', 'Test', 'Launch Prep']} />
+          </Card>
+          <Card>
+            <CardTitle>Orbital Parameters</CardTitle>
+            <Input label="Conjunction Events in 24h" value={data.conjunctions} onChange={v => setData(p => ({ ...p, conjunctions: Number(v) }))} type="number" />
+            <Input label="Closest Approach (km)" value={data.closestApproach} onChange={v => setData(p => ({ ...p, closestApproach: Number(v) }))} type="number" />
+            <Input label="Vendor Delay (days)" value={data.vendorDelay} onChange={v => setData(p => ({ ...p, vendorDelay: Number(v) }))} type="number" />
+            <Slider label="Weather Probability (%)" value={data.weatherProb} onChange={v => setData(p => ({ ...p, weatherProb: v }))} />
+          </Card>
+        </div>
+        <div>
+          <Card style={{ marginBottom: 16 }}>
+            <CardTitle>Schedule Milestone Health</CardTitle>
+            {data.milestones.map((m, i) => (
+              <Slider key={m.name} label={m.name} value={m.value}
+                onChange={v => setData(p => { const ms = [...p.milestones]; ms[i] = { ...ms[i], value: v }; return { ...p, milestones: ms }; })} />
+            ))}
+          </Card>
+          <Card>
+            <CardTitle>Subsystem Health</CardTitle>
+            {data.subsystems.map((s, i) => (
+              <Slider key={s.name} label={s.name} value={s.value}
+                onChange={v => setData(p => { const ss = [...p.subsystems]; ss[i] = { ...ss[i], value: v }; return { ...p, subsystems: ss }; })} />
+            ))}
+          </Card>
+        </div>
+      </div>
+      <div style={{ marginTop: 24 }}>
+        <button onClick={onRun} style={{ width: '100%', padding: 16, background: C.blue, border: 'none', borderRadius: 8, color: '#fff', fontFamily: 'Space Grotesk, sans-serif', fontWeight: 700, fontSize: 15, letterSpacing: 1, cursor: 'pointer', textTransform: 'uppercase', boxShadow: `0 0 24px ${C.blue}55`, transition: 'all 0.2s' }}
+          onMouseEnter={e => e.currentTarget.style.background = '#5aaaff'}
+          onMouseLeave={e => e.currentTarget.style.background = C.blue}>
+          ▶ Run Analysis — Deploy 12 Agents
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function LivePipelinePage({ agents, logLines }) {
+  const logEndRef = useRef(null);
+  useEffect(() => { logEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [logLines]);
+  const complete = agents.filter(a => a.status === 'Complete' || a.status === 'Escalated').length;
+  const layerNames = ['Data Ingestion & Analysis', 'Cross-Domain Synthesis', 'Risk Integration & Output'];
+  return (
+    <div style={{ display: 'flex', gap: 20, height: 'calc(100vh - 80px)' }}>
+      <div style={{ flex: 1, overflowY: 'auto', paddingRight: 4 }}>
+        <PageHeader title="Live Pipeline" subtitle={`${complete} / 12 agents completed`} />
+        {[1, 2, 3].map(layer => (
+          <div key={layer} style={{ marginBottom: 20 }}>
+            <div style={{ fontSize: 10, color: C.blue, fontFamily: 'JetBrains Mono, monospace', letterSpacing: 1, marginBottom: 8, textTransform: 'uppercase' }}>◈ Layer {layer} — {layerNames[layer - 1]}</div>
+            {agents.filter(a => a.layer === layer).map(a => <AgentCard key={a.id} agent={a} />)}
+          </div>
+        ))}
+        {agents[5]?.status === 'Complete' && (
+          <div style={{ background: `${C.purple}11`, border: `1px solid ${C.purple}44`, borderRadius: 8, padding: '12px 16px', marginTop: 8 }}>
+            <div style={{ fontSize: 10, color: C.purple, fontFamily: 'JetBrains Mono, monospace', marginBottom: 4 }}>↺ FEEDBACK LOOP</div>
+            <div style={{ fontSize: 12, color: C.textSec }}>SubsystemRelationships → ScheduleAnalyser — feedback signal transmitted. <strong style={{ color: C.purple }}>Runs once and terminates.</strong> Loop guard prevents recursive re-entry.</div>
+          </div>
+        )}
+      </div>
+      <div style={{ width: 300, flexShrink: 0 }}>
+        <Card style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+          <CardTitle>Live Agent Log</CardTitle>
+          <div style={{ flex: 1, overflowY: 'auto', fontFamily: 'JetBrains Mono, monospace', fontSize: 10 }}>
+            {logLines.map((line, i) => (
+              <div key={i} style={{ padding: '3px 0', borderBottom: `1px solid ${C.border}`, color: line.color || C.textSec, lineHeight: 1.5 }}>
+                <span style={{ color: C.textMut }}>{line.time} </span>{line.text}
+              </div>
+            ))}
+            <div ref={logEndRef} />
+          </div>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+function ProgramSchedulePage({ data, agents }) {
+  const getStatus = v => v >= 70 ? 'On Track' : v >= 40 ? 'At Risk' : 'Critical';
+  const daysAhead = v => {
+    const base = parseInt(data.daysToLaunch) || 90;
+    return v >= 70 ? `T-${base} (nominal)` : v >= 40 ? `T-${base + Math.round((70 - v) / 3)} (slipping)` : `T-${base + Math.round((70 - v) / 2)} (critical)`;
+  };
+  return (
+    <div>
+      <PageHeader title="Program Schedule" subtitle="Milestone tracking and delay risk signals from agent analysis" />
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+        <div>
+          <Card style={{ marginBottom: 16 }}>
+            <CardTitle>Milestone Progress</CardTitle>
+            {data.milestones.map(m => (
+              <div key={m.name} style={{ marginBottom: 14, paddingBottom: 14, borderBottom: `1px solid ${C.border}` }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                  <span style={{ fontSize: 12, color: C.text, fontWeight: 500 }}>{m.name}</span>
+                  <StatusBadge status={getStatus(m.value)} />
+                </div>
+                <div style={{ height: 6, background: C.s3, borderRadius: 3, overflow: 'hidden', marginBottom: 4 }}>
+                  <div style={{ width: `${m.value}%`, height: '100%', background: m.value >= 70 ? C.green : m.value >= 40 ? C.amber : C.red, borderRadius: 3, transition: 'width 1s ease' }} />
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: 10, color: C.textMut, fontFamily: 'JetBrains Mono, monospace' }}>{m.value}% complete</span>
+                  <span style={{ fontSize: 10, color: C.textMut, fontFamily: 'JetBrains Mono, monospace' }}>{daysAhead(m.value)}</span>
+                </div>
+              </div>
+            ))}
+          </Card>
+        </div>
+        <div>
+          <Card style={{ marginBottom: 16 }}>
+            <CardTitle>Risk Signals Detected</CardTitle>
+            {data.milestones.filter(m => m.value < 70).map(m => (
+              <div key={m.name} style={{ background: `${m.value < 40 ? C.red : C.amber}11`, border: `1px solid ${m.value < 40 ? C.red : C.amber}33`, borderRadius: 6, padding: '10px 12px', marginBottom: 8 }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: m.value < 40 ? C.red : C.amber, marginBottom: 2 }}>{m.name} — {m.value < 40 ? 'Critical Delay Risk' : 'Slip Risk Detected'}</div>
+                <div style={{ fontSize: 10, color: C.textSec }}>Current: {m.value}%. Required: 70%+ for nominal. Flagged by ScheduleAnalyser.</div>
+              </div>
+            ))}
+            {data.milestones.every(m => m.value >= 70) && <div style={{ color: C.green, fontSize: 12 }}>✓ All milestones nominal</div>}
+          </Card>
+          <Card style={{ marginBottom: 16 }}>
+            <CardTitle>Vendor Risk &amp; Cascade</CardTitle>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+              <span style={{ fontSize: 12, color: C.text }}>Vendor Delay</span>
+              <span style={{ fontSize: 12, color: data.vendorDelay > 5 ? C.red : C.green, fontFamily: 'JetBrains Mono, monospace', fontWeight: 600 }}>{data.vendorDelay} days</span>
+            </div>
+            {data.vendorDelay > 5 && (
+              <>
+                <div style={{ fontSize: 10, color: C.textSec, marginBottom: 8 }}>Cascade dependencies at risk:</div>
+                {['Avionics Test', 'Systems Integration', 'Launch Rehearsal'].map(dep => (
+                  <div key={dep} style={{ fontSize: 10, color: C.amber, fontFamily: 'JetBrains Mono, monospace', padding: '3px 0' }}>↳ {dep} — slip risk</div>
+                ))}
+              </>
+            )}
+          </Card>
+          <Card>
+            <CardTitle>Agent Attribution</CardTitle>
+            <div style={{ fontSize: 10, color: C.textSec, lineHeight: 1.8 }}>
+              {[['Milestone analysis', 'ScheduleAnalyser'], ['Vendor risk', 'VendorRiskAgent'], ['Cascade mapping', 'SubsystemRelationships'], ['Risk aggregation', 'RiskAggregatorAgent']].map(([role, agent]) => (
+                <div key={agent}>• {role} — <span style={{ color: C.blue }}>{agent}</span></div>
+              ))}
+            </div>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SubsystemsPage({ data }) {
+  const thermalHealth = data.subsystems.find(s => s.name === 'Thermal')?.value || 80;
+  const powerHealth = data.subsystems.find(s => s.name === 'Power')?.value || 80;
+  const feedbackSignal = thermalHealth < 60;
+  const allSubs = [...data.subsystems, { name: 'Structure', value: 88 }, { name: 'Attitude Control', value: 74 }, { name: 'Payload', value: 91 }];
+  return (
+    <div>
+      <PageHeader title="Subsystems" subtitle="Health grid, failure cascade analysis, and relationship feedback" />
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 20 }}>
+        {allSubs.slice(0, 8).map(s => {
+          const col = s.value >= 70 ? C.green : s.value >= 40 ? C.amber : C.red;
+          return (
+            <Card key={s.name} style={{ borderLeft: `3px solid ${col}` }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: C.text, marginBottom: 8 }}>{s.name}</div>
+              <div style={{ fontSize: 24, fontFamily: 'JetBrains Mono, monospace', fontWeight: 700, color: col, marginBottom: 4 }}>{s.value}%</div>
+              <StatusBadge status={s.value >= 70 ? 'On Track' : s.value >= 40 ? 'At Risk' : 'Critical'} />
+              <div style={{ marginTop: 8, height: 4, background: C.s3, borderRadius: 2 }}>
+                <div style={{ width: `${s.value}%`, height: '100%', background: col, borderRadius: 2 }} />
+              </div>
+              <div style={{ fontSize: 10, color: C.textMut, marginTop: 6 }}>{s.value >= 70 ? 'Nominal' : s.value >= 40 ? 'Degraded' : 'Critical'}</div>
+            </Card>
+          );
+        })}
+      </div>
+      {thermalHealth < 60 && (
+        <Card style={{ marginBottom: 16, borderLeft: `3px solid ${C.red}` }}>
+          <CardTitle>Failure Cascade Analysis</CardTitle>
+          <div style={{ fontSize: 12, color: C.textSec, marginBottom: 12 }}>Thermal degradation detected ({thermalHealth}%). Cascade path identified:</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            {[{ name: 'Thermal', v: thermalHealth, issue: 'Primary' }, null, { name: 'Power Distribution', v: powerHealth, issue: 'At Risk' }, null, { name: 'Avionics', v: data.subsystems.find(s => s.name === 'Avionics')?.value || 80, issue: 'Secondary risk' }].map((n, i) =>
+              n === null ? <span key={i} style={{ color: C.red, fontSize: 18 }}>→</span> : (
+                <div key={i} style={{ background: C.s3, borderRadius: 6, padding: '8px 12px', border: `1px solid ${C.red}33` }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: C.text }}>{n.name}</div>
+                  <div style={{ fontSize: 10, color: C.red, fontFamily: 'JetBrains Mono, monospace' }}>{n.v}% — {n.issue}</div>
+                </div>
+              )
+            )}
+          </div>
+        </Card>
+      )}
+      <Card>
+        <CardTitle>SubsystemRelationships Feedback Signal</CardTitle>
+        <div style={{ fontSize: 12, color: C.textSec, lineHeight: 1.6, marginBottom: 8 }}>
+          The SubsystemRelationships agent analysed cross-system dependencies and {feedbackSignal ? 'detected a critical thermal cascade' : 'found no critical cascades'}.
+        </div>
+        {feedbackSignal ? (
+          <div style={{ background: `${C.purple}11`, border: `1px solid ${C.purple}44`, borderRadius: 6, padding: '10px 12px' }}>
+            <div style={{ fontSize: 10, color: C.purple, fontFamily: 'JetBrains Mono, monospace', marginBottom: 4 }}>↺ FEEDBACK SIGNAL SENT</div>
+            <div style={{ fontSize: 11, color: C.textSec }}>Signal to ScheduleAnalyser: "Thermal cascade affects integration timeline." <strong style={{ color: C.purple }}>Ran once and stopped.</strong></div>
+          </div>
+        ) : (
+          <div style={{ fontSize: 11, color: C.green }}>✓ No feedback signal required — all cascades within tolerance</div>
+        )}
+      </Card>
+    </div>
+  );
+}
+
+function LaunchWindowPage({ data }) {
+  const thermalOk = (data.subsystems.find(s => s.name === 'Thermal')?.value || 0) >= 70;
+  const propOk = (data.subsystems.find(s => s.name === 'Propulsion')?.value || 0) >= 70;
+  const checks = [
+    { label: 'Weather', go: data.weatherProb <= 60, note: data.weatherProb <= 60 ? `Probability ${data.weatherProb}% — within limits` : `Probability ${data.weatherProb}% — exceeds 60% threshold` },
+    { label: 'Range Availability', go: true, note: 'Range confirmed clear — nominal' },
+    { label: 'Thermal Qualification', go: thermalOk, note: thermalOk ? 'Qualification complete' : `Health ${data.subsystems.find(s => s.name === 'Thermal')?.value}% — below threshold` },
+    { label: 'Propulsion Readiness', go: propOk, note: propOk ? 'Propulsion nominal' : `Health ${data.subsystems.find(s => s.name === 'Propulsion')?.value}% — not ready` },
+    { label: 'Orbital Clearance', go: data.conjunctions <= 3, note: data.conjunctions <= 3 ? `${data.conjunctions} conjunction events — acceptable` : `${data.conjunctions} events — clearance at risk` },
+  ];
+  const readiness = Math.round((checks.filter(c => c.go).length / checks.length) * 100);
+  const t = parseInt(data.daysToLaunch) || 90;
+  return (
+    <div style={{ maxWidth: 880 }}>
+      <PageHeader title="Launch Window" subtitle="Readiness assessment and GO/NO-GO checklist" />
+      <div style={{ display: 'grid', gridTemplateColumns: '240px 1fr', gap: 20 }}>
+        <div>
+          <Card style={{ textAlign: 'center', marginBottom: 16 }}>
+            <CircularGauge value={readiness} />
+            <div style={{ marginTop: 12, fontSize: 11, color: C.textSec }}>{checks.filter(c => c.go).length}/{checks.length} criteria met</div>
+          </Card>
+          <Card>
+            <CardTitle>Launch Windows</CardTitle>
+            <div style={{ marginBottom: 10 }}>
+              <div style={{ fontSize: 10, color: C.textMut, fontFamily: 'JetBrains Mono, monospace', marginBottom: 3 }}>PRIMARY</div>
+              <div style={{ fontSize: 12, color: C.text }}>T+{t}d · 04:22 UTC</div>
+            </div>
+            <div>
+              <div style={{ fontSize: 10, color: C.textMut, fontFamily: 'JetBrains Mono, monospace', marginBottom: 3 }}>BACKUP</div>
+              <div style={{ fontSize: 12, color: C.textSec }}>T+{t + 2}d · 04:38 UTC</div>
+            </div>
+          </Card>
+        </div>
+        <div>
+          <Card style={{ marginBottom: 16 }}>
+            <CardTitle>GO / NO-GO Checklist</CardTitle>
+            {checks.map(c => (
+              <div key={c.label} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '10px 0', borderBottom: `1px solid ${C.border}` }}>
+                <div style={{ width: 64, flexShrink: 0 }}><StatusBadge status={c.go ? 'GO' : 'NO-GO'} /></div>
+                <div>
+                  <div style={{ fontSize: 12, color: C.text, fontWeight: 500 }}>{c.label}</div>
+                  <div style={{ fontSize: 10, color: C.textSec }}>{c.note}</div>
+                </div>
+              </div>
+            ))}
+          </Card>
+          <SystemNote>Launch authorisation is NOT possible through this system. ORBITAL provides the risk picture and readiness assessment only. Final launch authorisation requires human sign-off from the Mission Director. No agent in this system can issue a launch command.</SystemNote>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function OrbitalRiskPage({ data }) {
+  const riskLevel = data.conjunctions > 5 ? 'HIGH' : data.conjunctions > 2 ? 'MEDIUM' : 'LOW';
+  const collisionProb = data.conjunctions > 5 ? '1.2×10⁻⁴' : data.conjunctions > 2 ? '3.8×10⁻⁵' : '7.1×10⁻⁶';
+  return (
+    <div style={{ maxWidth: 880 }}>
+      <PageHeader title="Orbital Risk" subtitle="Conjunction analysis, space weather, and maneuver recommendations" badge={riskLevel} />
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20 }}>
+        <Card>
+          <CardTitle>Conjunction Event Summary</CardTitle>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            {[{ label: 'Events in 24h', value: data.conjunctions, hi: data.conjunctions > 3 }, { label: 'Closest Approach', value: `${data.closestApproach} km`, hi: data.closestApproach < 5 }, { label: 'Collision Probability', value: collisionProb, hi: data.conjunctions > 3 }, { label: 'Risk Level', value: riskLevel, hi: riskLevel !== 'LOW' }].map(item => (
+              <div key={item.label} style={{ background: C.s3, borderRadius: 6, padding: 12 }}>
+                <div style={{ fontSize: 9, color: C.textMut, fontFamily: 'JetBrains Mono, monospace', marginBottom: 4 }}>{item.label}</div>
+                <div style={{ fontSize: 16, fontFamily: 'JetBrains Mono, monospace', fontWeight: 700, color: item.hi ? C.amber : C.text }}>{item.value}</div>
+              </div>
+            ))}
+          </div>
+        </Card>
+        <Card>
+          <CardTitle>Orbital Parameters</CardTitle>
+          {[['Target Orbit', data.orbit], ['Inclination', '51.6°'], ['Eccentricity', '0.0002'], ['Space Weather', 'Kp index: 3 — Minor'], ['Solar Flux (F10.7)', '148 sfu']].map(([label, value]) => (
+            <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: `1px solid ${C.border}` }}>
+              <span style={{ fontSize: 11, color: C.textSec }}>{label}</span>
+              <span style={{ fontSize: 11, color: C.text, fontFamily: 'JetBrains Mono, monospace' }}>{value}</span>
+            </div>
+          ))}
+        </Card>
+      </div>
+      <Card>
+        <CardTitle>Maneuver Recommendations</CardTitle>
+        {data.conjunctions > 2 ? (
+          <>
+            {[{ action: 'Conjunction avoidance burn', delta_v: '0.3 m/s', timing: 'T-24h before closest approach', priority: 'Recommended' }, { action: 'Orbit raising — +2km', delta_v: '1.1 m/s', timing: 'If conjunction probability > 1×10⁻⁴', priority: 'Contingency' }].map(r => (
+              <div key={r.action} style={{ background: C.s3, borderRadius: 6, padding: 12, marginBottom: 8 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: C.text }}>{r.action}</span>
+                  <StatusBadge status={r.priority} />
+                </div>
+                <div style={{ fontSize: 10, color: C.textSec, fontFamily: 'JetBrains Mono, monospace' }}>Δv: {r.delta_v} · {r.timing}</div>
+              </div>
+            ))}
+          </>
+        ) : (
+          <div style={{ color: C.green, fontSize: 12 }}>✓ No maneuvers required — conjunction profile nominal</div>
+        )}
+        <SystemNote>Maneuver recommendations are flagged by OrbitalMechanicsAgent for human review. Execution authorisation is human-only. This system cannot command spacecraft operations.</SystemNote>
+      </Card>
+    </div>
+  );
+}
+
+function EscalationsPage({ data }) {
+  const escItems = [
+    data.milestones.some(m => m.value < 40) && { id: 1, priority: 'P1', desc: 'Critical milestone below threshold — schedule slip imminent', agent: 'ScheduleAnalyser', routed: 'Mission Director', time: '14:02 UTC', status: 'Open' },
+    data.vendorDelay > 10 && { id: 2, priority: 'P1', desc: `Vendor delay ${data.vendorDelay} days — cascade risk to 3 dependencies`, agent: 'VendorRiskAgent', routed: 'Program Manager', time: '14:03 UTC', status: 'Open' },
+    data.conjunctions > 5 && { id: 3, priority: 'P1', desc: 'High conjunction count — collision probability elevated', agent: 'OrbitalMechanicsAgent', routed: 'Flight Dynamics', time: '14:04 UTC', status: 'Open' },
+    data.weatherProb > 70 && { id: 4, priority: 'P2', desc: `Weather probability ${data.weatherProb}% — launch window at risk`, agent: 'WeatherMonitor', routed: 'Launch Director', time: '14:05 UTC', status: 'Open' },
+    data.subsystems.some(s => s.value < 40) && { id: 5, priority: 'P2', desc: `Subsystem critical: ${data.subsystems.filter(s => s.value < 40).map(s => s.name).join(', ')}`, agent: 'SubsystemHealthAgent', routed: 'Systems Engineer', time: '14:06 UTC', status: 'Open' },
+  ].filter(Boolean);
+  const resolved = [{ id: 99, priority: 'P2', desc: 'Communications latency exceeded threshold — resolved by system reconfig', agent: 'SubsystemHealthAgent', routed: 'Comms Lead', time: '13:41 UTC', status: 'Resolved' }];
+  return (
+    <div style={{ maxWidth: 880 }}>
+      <PageHeader title="Escalations" subtitle={`${escItems.length} open · ${resolved.length} resolved`} />
+      <SystemNote>All approve actions require human confirmation. Escalations are routed for human review — no agent in this system can resolve, approve, or close an escalation autonomously.</SystemNote>
+      <div style={{ marginTop: 20 }}>
+        <div style={{ fontSize: 11, color: C.textMut, fontFamily: 'JetBrains Mono, monospace', marginBottom: 10, letterSpacing: 1 }}>OPEN ESCALATIONS</div>
+        {escItems.length === 0 && <div style={{ color: C.green, fontSize: 13, padding: '16px 0' }}>✓ No open escalations</div>}
+        {escItems.map(e => (
+          <Card key={e.id} style={{ marginBottom: 10, borderLeft: `3px solid ${e.priority === 'P1' ? C.red : C.amber}` }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+              <div style={{ display: 'flex', gap: 8 }}><StatusBadge status={e.priority} /><StatusBadge status={e.status} /></div>
+              <span style={{ fontSize: 10, color: C.textMut, fontFamily: 'JetBrains Mono, monospace' }}>{e.time}</span>
+            </div>
+            <div style={{ fontSize: 13, color: C.text, fontWeight: 500, marginBottom: 6 }}>{e.desc}</div>
+            <div style={{ display: 'flex', gap: 16 }}>
+              <span style={{ fontSize: 10, color: C.textMut }}>Raised by: <span style={{ color: C.blue }}>{e.agent}</span></span>
+              <span style={{ fontSize: 10, color: C.textMut }}>Routed to: <span style={{ color: C.textSec }}>{e.routed}</span></span>
+            </div>
+          </Card>
+        ))}
+        <div style={{ fontSize: 11, color: C.textMut, fontFamily: 'JetBrains Mono, monospace', margin: '20px 0 10px', letterSpacing: 1 }}>RESOLVED</div>
+        {resolved.map(e => (
+          <Card key={e.id} style={{ marginBottom: 10, opacity: 0.6 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+              <div style={{ display: 'flex', gap: 8 }}><StatusBadge status={e.priority} /><StatusBadge status="Resolved" /></div>
+              <span style={{ fontSize: 10, color: C.textMut, fontFamily: 'JetBrains Mono, monospace' }}>{e.time}</span>
+            </div>
+            <div style={{ fontSize: 12, color: C.textSec }}>{e.desc}</div>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ExecutiveReportPage({ data }) {
+  const score = data.subsystems.filter(s => s.value < 60).length + data.milestones.filter(m => m.value < 60).length + (data.conjunctions > 3 ? 2 : 0) + (data.vendorDelay > 5 ? 1 : 0);
+  const riskLevel = score > 5 ? 'HIGH' : score > 2 ? 'MEDIUM' : 'LOW';
+  const today = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
+  const critSubs = data.subsystems.filter(s => s.value < 60).map(s => s.name);
+  const critMilestones = data.milestones.filter(m => m.value < 60).map(m => m.name);
+  const riskCol = riskLevel === 'HIGH' ? C.red : riskLevel === 'MEDIUM' ? C.amber : C.green;
+  const risks = [critSubs.length > 0 && `Subsystem degradation: ${critSubs.join(', ')} — health below 60%`, critMilestones.length > 0 && `Schedule slippage risk: ${critMilestones.join(', ')}`, data.vendorDelay > 5 && `Vendor delay of ${data.vendorDelay} days — dependency cascade identified`, data.conjunctions > 3 && `${data.conjunctions} conjunction events in 24h — orbital clearance at risk`, data.weatherProb > 60 && `Weather probability ${data.weatherProb}% — launch window viability reduced`].filter(Boolean);
+  const actions = [critSubs.length > 0 && `Review and remediate ${critSubs[0]} subsystem before next milestone gate`, critMilestones.length > 0 && `Convene schedule review board for slipping milestones`, data.vendorDelay > 5 && `Activate contingency vendor pathway; assess cascade impact on CDR`, data.conjunctions > 3 && `Flight dynamics to review conjunction avoidance burn options`].filter(Boolean);
+  return (
+    <div style={{ maxWidth: 780 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
+        <PageHeader title="Executive Report" subtitle="Auto-generated by ExecutiveReportAgent · Public output" badge={riskLevel} />
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0, marginTop: 4 }}>
+          <div style={{ fontSize: 10, color: C.green, fontFamily: 'JetBrains Mono, monospace', background: `${C.green}11`, border: `1px solid ${C.green}33`, borderRadius: 4, padding: '4px 8px' }}>PUBLIC</div>
+          <button style={{ background: C.blue, border: 'none', borderRadius: 6, padding: '8px 16px', color: '#fff', fontFamily: 'Space Grotesk, sans-serif', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>↓ Download PDF</button>
+        </div>
+      </div>
+      <Card>
+        <div style={{ borderBottom: `1px solid ${C.border}`, paddingBottom: 16, marginBottom: 16 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16 }}>
+            <div><div style={{ fontSize: 9, color: C.textMut, fontFamily: 'JetBrains Mono, monospace', marginBottom: 3 }}>MISSION</div><div style={{ fontSize: 13, color: C.text, fontWeight: 600 }}>{data.missionName}</div></div>
+            <div><div style={{ fontSize: 9, color: C.textMut, fontFamily: 'JetBrains Mono, monospace', marginBottom: 3 }}>DATE</div><div style={{ fontSize: 13, color: C.text }}>{today}</div></div>
+            <div><div style={{ fontSize: 9, color: C.textMut, fontFamily: 'JetBrains Mono, monospace', marginBottom: 3 }}>RISK LEVEL</div><StatusBadge status={riskLevel} /></div>
+          </div>
+        </div>
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ fontSize: 11, color: C.textMut, fontFamily: 'JetBrains Mono, monospace', marginBottom: 8, letterSpacing: 1 }}>MISSION STATUS</div>
+          <p style={{ margin: 0, fontSize: 13, color: C.textSec, lineHeight: 1.7 }}>
+            Mission <strong style={{ color: C.text }}>{data.missionName}</strong> is currently in the <strong style={{ color: C.text }}>{data.phase}</strong> phase with <strong style={{ color: C.text }}>{data.daysToLaunch} days</strong> to launch targeting <strong style={{ color: C.text }}>{data.orbit}</strong>. Pipeline analysis by 12 verified AI agents has identified an overall mission risk level of <strong style={{ color: riskCol }}>{riskLevel}</strong>. {critSubs.length > 0 ? `Critical subsystem concerns exist in ${critSubs.join(', ')}.` : 'All subsystems are reporting within acceptable parameters.'} {critMilestones.length > 0 ? `Schedule milestones requiring attention: ${critMilestones.join(', ')}.` : 'All schedule milestones are on track.'}
+          </p>
+        </div>
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ fontSize: 11, color: C.textMut, fontFamily: 'JetBrains Mono, monospace', marginBottom: 8, letterSpacing: 1 }}>KEY RISKS</div>
+          {risks.length === 0 ? <div style={{ color: C.green, fontSize: 12 }}>✓ No significant risks identified</div> : risks.map((risk, i) => (
+            <div key={i} style={{ display: 'flex', gap: 10, padding: '6px 0', borderBottom: `1px solid ${C.border}` }}>
+              <span style={{ color: C.red, fontSize: 10, marginTop: 2, flexShrink: 0 }}>▲</span>
+              <span style={{ fontSize: 12, color: C.textSec }}>{risk}</span>
+            </div>
+          ))}
+        </div>
+        <div>
+          <div style={{ fontSize: 11, color: C.textMut, fontFamily: 'JetBrains Mono, monospace', marginBottom: 8, letterSpacing: 1 }}>RECOMMENDED ACTIONS</div>
+          {actions.map((action, i) => (
+            <div key={i} style={{ display: 'flex', gap: 10, padding: '6px 0' }}>
+              <span style={{ color: C.blue, fontSize: 10, marginTop: 2, flexShrink: 0 }}>→</span>
+              <span style={{ fontSize: 12, color: C.textSec }}>{action}</span>
+            </div>
+          ))}
+        </div>
+        <SystemNote>This report is generated by ExecutiveReportAgent as a Public output. It represents the AI risk picture only. All operational decisions, launch authorisations, and maneuver commands require human authority.</SystemNote>
+      </Card>
+    </div>
+  );
+}
+
+// ── App ───────────────────────────────────────────────────────────────────────
+function App() {
+  const [page, setPage] = useState('setup');
+  const [missionData, setMissionData] = useState(DEFAULT);
+  const [agents, setAgents] = useState([]);
+  const [logLines, setLogLines] = useState([]);
+  const [pipelineRunning, setPipelineRunning] = useState(false);
+  const [pipelineComplete, setPipelineComplete] = useState(false);
+  const logRef = useRef([]);
+  const voiceRef = useRef(true);
+  const [voiceEnabled, setVoiceState] = useState(true);
+
+  const setVoiceEnabled = v => { voiceRef.current = v; setVoiceState(v); };
+
+  const speak = useCallback((text, delay = 0) => {
+    const fire = () => {
+      if (!voiceRef.current) return;
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.rate = 0.92; u.pitch = 1.0; u.volume = 1;
+      window.speechSynthesis.speak(u);
+    };
+    delay ? setTimeout(fire, delay) : fire();
+  }, []);
+
+  useEffect(() => {
+    if (page !== 'pipeline') speak(PAGE_NAR[page] || '', 300);
+  }, [page]);
+
+  const addLog = (text, color) => {
+    const time = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    logRef.current = [...logRef.current, { time, text, color }];
+    setLogLines([...logRef.current]);
+  };
+
+  const runPipeline = () => {
+    if (pipelineRunning) return;
+    const templates = buildAgents(missionData);
+    setAgents(templates.map(a => ({ ...a, status: 'Queued' })));
+    setLogLines([]); logRef.current = [];
+    setPipelineRunning(true); setPipelineComplete(false);
+    setPage('pipeline');
+    addLog('Pipeline initiated — deploying 12 agents', C.blue);
+    speak('Pipeline initiated. Deploying all twelve agents now.', 400);
+    templates.forEach((agent, i) => {
+      const startMs = i * 900, doneMs = i * 900 + 700;
+      setTimeout(() => {
+        setAgents(prev => prev.map(a => a.id === agent.id ? { ...a, status: 'Running' } : a));
+        addLog(`[${agent.name}] started — Layer ${agent.layer}`, C.blue);
+        speak(AGENT_NAR_START[agent.name] || `${agent.name} is running.`);
+      }, startMs);
+      setTimeout(() => {
+        const status = agent.blockedAction ? 'Escalated' : 'Complete';
+        setAgents(prev => prev.map(a => a.id === agent.id ? { ...a, status } : a));
+        addLog(`[${agent.name}] ${status === 'Escalated' ? 'escalated — blocked: ' + agent.blockedAction : 'complete — ' + agent.output.slice(0, 50)}`, status === 'Escalated' ? C.red : C.green);
+        if (i === templates.length - 1) {
+          setTimeout(() => {
+            setPipelineRunning(false); setPipelineComplete(true);
+            addLog('▶ All agents complete. Risk picture ready.', C.cyan);
+            speak('Pipeline complete. All twelve agents have finished. The full risk picture is now available.');
+          }, 500);
+        }
+      }, doneMs);
+    });
+  };
+
+  return (
+    <div style={{ display: 'flex', minHeight: '100vh', background: C.bg }}>
+      <Sidebar page={page} setPage={setPage} pipelineComplete={pipelineComplete} missionName={pipelineComplete ? missionData.missionName : null} />
+      <main style={{ flex: 1, padding: '32px 36px', overflowY: 'auto', minHeight: '100vh', position: 'relative' }}>
+        <button onClick={() => {
+          const next = !voiceEnabled; setVoiceEnabled(next);
+          if (!next) window.speechSynthesis.cancel();
+          else { const u = new SpeechSynthesisUtterance('Voice narration enabled.'); u.rate = 0.92; window.speechSynthesis.speak(u); }
+        }} style={{ position: 'fixed', top: 20, right: 24, zIndex: 100, background: voiceEnabled ? `${C.blue}22` : `${C.textMut}18`, border: `1px solid ${voiceEnabled ? C.blue + '55' : C.border}`, borderRadius: 8, padding: '7px 13px', color: voiceEnabled ? C.blue : C.textMut, fontFamily: 'Space Grotesk, sans-serif', fontSize: 11, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 7, transition: 'all 0.2s' }}>
+          <span style={{ fontSize: 14 }}>{voiceEnabled ? '🔊' : '🔇'}</span>
+          {voiceEnabled ? 'Voice On' : 'Voice Off'}
+        </button>
+        {page === 'setup'       && <MissionSetupPage data={missionData} setData={setMissionData} onRun={runPipeline} />}
+        {page === 'pipeline'    && <LivePipelinePage agents={agents} logLines={logLines} />}
+        {page === 'schedule'    && <ProgramSchedulePage data={missionData} agents={agents} />}
+        {page === 'subsystems'  && <SubsystemsPage data={missionData} />}
+        {page === 'launch'      && <LaunchWindowPage data={missionData} />}
+        {page === 'orbital'     && <OrbitalRiskPage data={missionData} />}
+        {page === 'escalations' && <EscalationsPage data={missionData} agents={agents} />}
+        {page === 'report'      && <ExecutiveReportPage data={missionData} agents={agents} />}
+      </main>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
