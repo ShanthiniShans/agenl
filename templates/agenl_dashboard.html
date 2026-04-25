@@ -135,8 +135,8 @@ function StatusBadge({ status }) {
   return <span style={{ background: s.bg, color: s.c, border: `1px solid ${s.c}44`, borderRadius: 4, padding: '2px 7px', fontSize: 10, fontFamily: 'JetBrains Mono, monospace', fontWeight: 600, letterSpacing: 0.5 }}>{status}</span>;
 }
 
-function Card({ children, style = {} }) {
-  return <div style={{ background: C.s2, border: `1px solid ${C.border}`, borderRadius: 8, padding: '16px 18px', ...style }}>{children}</div>;
+function Card({ children, style = {}, onClick }) {
+  return <div onClick={onClick} style={{ background: C.s2, border: `1px solid ${C.border}`, borderRadius: 8, padding: '16px 18px', ...style }}>{children}</div>;
 }
 
 function CardTitle({ children }) {
@@ -216,11 +216,11 @@ function AgentContractsPage() {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
                   <div>
                     <div style={{ fontSize: 9, color: C.green, fontFamily: 'JetBrains Mono, monospace', marginBottom: 4 }}>ALLOW</div>
-                    {agent.allow.map(a => <div key={a} style={{ fontSize: 10, color: C.textSec, fontFamily: 'JetBrains Mono, monospace', padding: '1px 0' }}>+ {a}</div>)}
+                    {agent.allow.map(a => <div key={a} style={{ fontSize: 10, color: C.textSec, fontFamily: 'JetBrains Mono, monospace', padding: '1px 0' }}><span style={{ color: C.green }}>+</span> {a}</div>)}
                   </div>
                   <div>
                     <div style={{ fontSize: 9, color: C.red, fontFamily: 'JetBrains Mono, monospace', marginBottom: 4 }}>BLOCK</div>
-                    {agent.block.map(b => <div key={b} style={{ fontSize: 10, color: C.textSec, fontFamily: 'JetBrains Mono, monospace', padding: '1px 0' }}>✗ {b}</div>)}
+                    {agent.block.map(b => <div key={b} style={{ fontSize: 10, color: C.textSec, fontFamily: 'JetBrains Mono, monospace', padding: '1px 0' }}><span style={{ color: C.red }}>✗</span> {b}</div>)}
                   </div>
                 </div>
                 {agent.confirm.length > 0 && (

@@ -16,9 +16,10 @@ body { background: #080c14; color: #e2e8f0; font-family: 'Space Grotesk', sans-s
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: #0d1420; }
 ::-webkit-scrollbar-thumb { background: #243347; border-radius: 3px; }
-input[type=range] { height: 4px; -webkit-appearance: none; appearance: none; background: transparent; }
-input[type=range]::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: #1a2535; }
-input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 14px; height: 14px; border-radius: 50%; margin-top: -5px; cursor: pointer; }
+input[type=range] { -webkit-appearance: none; appearance: none; height: 6px; border-radius: 3px; background: linear-gradient(to right, var(--thumb-color, #3b9eff) var(--fill-pct, 50%), #1a2535 var(--fill-pct, 50%)); cursor: pointer; outline: none; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--thumb-color, #3b9eff); cursor: pointer; box-shadow: 0 0 6px var(--thumb-color, #3b9eff)66; }
+input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--thumb-color, #3b9eff); cursor: pointer; border: none; }
+input[type=range]::-moz-range-track { height: 6px; border-radius: 3px; background: #1a2535; }
 select option { background: #111927; }
 @keyframes fadeSlideIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
@@ -148,7 +149,7 @@ function Slider({ label, value, onChange }) {
         <span style={{ fontSize: 11, color: col, fontFamily: 'JetBrains Mono, monospace', fontWeight: 600 }}>{value}%</span>
       </div>
       <input type="range" min="0" max="100" value={value} onChange={e => onChange(Number(e.target.value))}
-        style={{ width: '100%', accentColor: col, cursor: 'pointer' }} />
+        style={{ width: '100%', cursor: 'pointer', '--thumb-color': col, '--fill-pct': `${value}%` }} />
     </div>
   );
 }
