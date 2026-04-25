@@ -452,6 +452,13 @@ AGENL was developed during the LeanLang for Verified Autonomy Hackathon at IISc 
 
 ---
 
+## Acknowledgements
+Built during the LeanLang for Verified Autonomy Hackathon
+organised by Emergence AI · IISc Bangalore · April 2026
+Mentor: Prof. Siddhartha Gadgil
+
+---
+
 ## License
 
 Business Source License 1.1
