@@ -27,3 +27,4 @@ vscode-extension/*.vsix
 # Codespaces
 .devcontainer/
 demo.cast
+.claude/
