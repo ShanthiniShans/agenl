@@ -1,0 +1,29 @@
+[
+  {
+    "name": "IncidentHandler",
+    "author": "ShanthiniShans",
+    "description": "IT incident triage and escalation agent",
+    "contract": "agents/incident_handler.agent",
+    "tags": ["it-ops", "escalation", "enterprise"],
+    "verified": true,
+    "theorems": 3
+  },
+  {
+    "name": "ScheduleAnalyser",
+    "author": "ShanthiniShans",
+    "description": "Space mission schedule analysis agent",
+    "contract": "agents/orbital/schedule_analyser.agenl",
+    "tags": ["aerospace", "orbital", "schedule"],
+    "verified": true,
+    "theorems": 4
+  },
+  {
+    "name": "LaunchWindowAnalyser",
+    "author": "ShanthiniShans",
+    "description": "Launch window assessment - approve_launch mathematically blocked",
+    "contract": "agents/orbital/launch_window_analyser.agenl",
+    "tags": ["aerospace", "orbital", "safety-critical"],
+    "verified": true,
+    "theorems": 4
+  }
+]
