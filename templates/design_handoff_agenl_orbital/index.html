@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AGENL-ORBITAL — Platform Suite</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #060810;
+    color: #e2e8f0;
+    font-family: 'Space Grotesk', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 24px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* subtle star field */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      radial-gradient(1px 1px at 15% 20%, #ffffff18, transparent),
+      radial-gradient(1px 1px at 40% 70%, #ffffff10, transparent),
+      radial-gradient(1px 1px at 70% 15%, #ffffff14, transparent),
+      radial-gradient(1px 1px at 85% 55%, #ffffff0d, transparent),
+      radial-gradient(1px 1px at 25% 85%, #ffffff12, transparent),
+      radial-gradient(1px 1px at 60% 40%, #ffffff08, transparent),
+      radial-gradient(1px 1px at 90% 80%, #ffffff10, transparent),
+      radial-gradient(1px 1px at 5% 50%, #ffffff0d, transparent),
+      radial-gradient(2px 2px at 50% 90%, #ffffff06, transparent),
+      radial-gradient(1px 1px at 35% 35%, #ffffff14, transparent);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* subtle gradient vignette */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at 50% 50%, transparent 30%, #060810cc 100%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .content {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 860px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .suite-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: #454a72;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+
+  .suite-title {
+    font-size: 48px;
+    font-weight: 700;
+    letter-spacing: 6px;
+    color: #e8eaf6;
+    margin-bottom: 8px;
+    text-align: center;
+  }
+
+  .suite-title span {
+    color: #6366f1;
+  }
+
+  .suite-sub {
+    font-size: 13px;
+    color: #7b82b4;
+    margin-bottom: 60px;
+    text-align: center;
+    letter-spacing: 1px;
+  }
+
+  .cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    width: 100%;
+    margin-bottom: 48px;
+  }
+
+  .card {
+    background: #0d0f1a;
+    border: 1px solid #1d2138;
+    border-radius: 12px;
+    padding: 32px;
+    text-decoration: none;
+    display: flex;
+    flex-direction: column;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .card.orbital::before { background: linear-gradient(90deg, transparent, #3b9eff, transparent); }
+  .card.agenl::before  { background: linear-gradient(90deg, transparent, #6366f1, transparent); }
+
+  .card:hover { transform: translateY(-3px); }
+  .card.orbital:hover { border-color: #3b9eff44; box-shadow: 0 12px 40px #3b9eff18; }
+  .card.agenl:hover  { border-color: #6366f144; box-shadow: 0 12px 40px #6366f118; }
+  .card:hover::before { opacity: 1; }
+
+  .card-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+  .card.orbital .card-icon {
+    background: radial-gradient(circle at 35% 35%, #3b9eff, #0a1a3a);
+    box-shadow: 0 0 20px #3b9eff33;
+    border-radius: 50%;
+  }
+  .card.agenl .card-icon {
+    background: linear-gradient(135deg, #6366f1, #a78bfa);
+    font-weight: 700;
+    color: #fff;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 14px;
+    letter-spacing: 1px;
+  }
+
+  .card-name {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    margin-bottom: 4px;
+  }
+  .card.orbital .card-name { color: #e2e8f0; }
+  .card.agenl  .card-name { color: #e8eaf6; }
+
+  .card-tagline {
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #454a72;
+    letter-spacing: 1px;
+    margin-bottom: 20px;
+  }
+
+  .card-desc {
+    font-size: 13px;
+    color: #7a9ab8;
+    line-height: 1.65;
+    flex: 1;
+    margin-bottom: 24px;
+  }
+  .card.agenl .card-desc { color: #7b82b4; }
+
+  .card-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 24px;
+  }
+
+  .pill {
+    font-size: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    padding: 3px 9px;
+    border-radius: 4px;
+  }
+  .card.orbital .pill { background: #3b9eff15; color: #3b9eff; border: 1px solid #3b9eff33; }
+  .card.agenl  .pill { background: #6366f115; color: #6366f1; border: 1px solid #6366f133; }
+
+  .card-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    padding: 10px 18px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.15s;
+    font-family: 'Space Grotesk', sans-serif;
+    align-self: flex-start;
+  }
+  .card.orbital .card-cta { background: #3b9eff22; color: #3b9eff; border: 1px solid #3b9eff44; }
+  .card.agenl  .card-cta { background: #6366f122; color: #6366f1; border: 1px solid #6366f144; }
+  .card-cta:hover { filter: brightness(1.2); }
+
+  .meta {
+    display: flex;
+    gap: 32px;
+    font-size: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #454a72;
+    letter-spacing: 1px;
+    text-align: center;
+  }
+  .meta span { display: flex; flex-direction: column; gap: 4px; align-items: center; }
+  .meta strong { color: #7b82b4; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="content">
+  <div class="suite-label">Mission Intelligence Suite</div>
+  <div class="suite-title">AGENL<span>·</span>ORBITAL</div>
+  <div class="suite-sub">Agent Definition Language Framework · Space Mission Risk Intelligence</div>
+
+  <div class="cards">
+    <!-- AGENL -->
+    <a href="AGENL.html" class="card agenl">
+      <div class="card-icon">AL</div>
+      <div class="card-name">AGENL</div>
+      <div class="card-tagline">AGENT DEFINITION LANGUAGE FRAMEWORK</div>
+      <div class="card-desc">
+        Define, verify, and audit AI agent contracts. Browse the 18 Lean-verified safety theorems, inspect execution traces, check action permissions and information flow in real time, and monitor the safety log.
+      </div>
+      <div class="card-pills">
+        <span class="pill">18 Theorems</span>
+        <span class="pill">Lean Proofs</span>
+        <span class="pill">Info Flow</span>
+        <span class="pill">Safety Log</span>
+        <span class="pill">Contracts</span>
+      </div>
+      <a href="AGENL.html" class="card-cta">Open AGENL →</a>
+    </a>
+
+    <!-- ORBITAL -->
+    <a href="ORBITAL.html" class="card orbital">
+      <div class="card-icon">○</div>
+      <div class="card-name">ORBITAL</div>
+      <div class="card-tagline">MISSION RISK INTELLIGENCE PLATFORM</div>
+      <div class="card-desc">
+        Enter mission parameters and deploy 12 verified AI agents to analyse schedule risk, subsystem health, orbital conjunction events, and launch window viability. Produces a unified risk picture for mission managers.
+      </div>
+      <div class="card-pills">
+        <span class="pill">12 Agents</span>
+        <span class="pill">Live Pipeline</span>
+        <span class="pill">GO/NO-GO</span>
+        <span class="pill">Executive Report</span>
+        <span class="pill">Orbital Risk</span>
+      </div>
+      <a href="ORBITAL.html" class="card-cta">Open ORBITAL →</a>
+    </a>
+  </div>
+
+  <div class="meta">
+    <span><strong>12</strong> verified agents</span>
+    <span><strong>18</strong> Lean theorems</span>
+    <span><strong>3298</strong> build jobs</span>
+    <span><strong>lake build</strong> exit 0</span>
+    <span><strong>v2.4.1</strong> classified</span>
+  </div>
+</div>
+</body>
+</html>

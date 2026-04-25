@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AGENL — Agent Definition Language</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #08090f; color: #e8eaf6; font-family: 'Space Grotesk', sans-serif; }
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: #0d0f1a; }
+  ::-webkit-scrollbar-thumb { background: #252844; border-radius: 3px; }
+  select option { background: #111422; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel" src="agenl-components.jsx"></script>
+<script type="text/babel" src="agenl-pages.jsx"></script>
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+const AGENL_NARRATION = {
+  contracts: "Agent Contracts. This library shows all twelve defined agents with their trust levels, allow and block list counts, and verification status. Click any card to expand the full contract definition.",
+  define: "Define Agent. Use this builder to create a new agent contract. As you type, live validation checks for conflicts — if any tool appears in both the allow and block list, a warning is shown immediately. Use Generate Contract to preview the dot-agenl file, or Verify with Lean to run the proof checker.",
+  verification: "Verification. Two interactive checks let you test the system. The action permission check tells you whether a specific action is allowed, blocked, or not permitted for any agent. The information flow check verifies whether data can legally move between security labels, backed by the canFlowTo theorems.",
+  trace: "Execution Trace. The complete trace from the last pipeline run. Each collapsible section shows an agent's input label, output label, and any blocked actions with the theorem reference that proves they are impossible. Use the filters to focus on blocked or allowed actions only.",
+  infoflow: "Information Flow. The DataLabel lattice shows three security levels: Public at rank zero, Internal at rank one, and Secret at rank two. Data can only flow to labels of equal or higher rank. The taint tracking structure ensures labels travel with data items through every computation step.",
+  safetylog: "Safety Log. A complete timestamped record of every action attempted during pipeline execution. Blocked actions appear in red with the theorem name that proves the action is impossible. Filter by agent name or status to audit any part of the run.",
+  proofs: "Proofs. All eighteen Lean-verified theorems that formally guarantee the safety properties of the AGENL framework. Click any theorem to expand its Lean four notation. The build header confirms all theorems passed with lake build exit zero across three thousand two hundred and ninety-eight jobs.",
+};
+
+function App() {
+  const [page, setPage] = useState('contracts');
+  const voiceRef = useRef(true);
+  const [voiceEnabled, setVoiceEnabledState] = useState(true);
+
+  const setVoiceEnabled = (v) => { voiceRef.current = v; setVoiceEnabledState(v); };
+
+  const speak = (text, delay = 300) => {
+    setTimeout(() => {
+      if (!voiceRef.current) return;
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.rate = 0.92; u.pitch = 1.0; u.volume = 1;
+      window.speechSynthesis.speak(u);
+    }, delay);
+  };
+
+  useEffect(() => { speak(AGENL_NARRATION[page] || ''); }, [page]);
+
+  return (
+    <div style={{ display: 'flex', minHeight: '100vh', background: A_COLORS.bg }}>
+      <AgenLSidebar page={page} setPage={setPage} />
+      <main style={{ flex: 1, padding: '32px 36px', overflowY: 'auto', minHeight: '100vh', position: 'relative' }}>
+
+        {/* Voice toggle */}
+        <button
+          onClick={() => {
+            const next = !voiceEnabled;
+            setVoiceEnabled(next);
+            if (!next) window.speechSynthesis.cancel();
+            else { const u = new SpeechSynthesisUtterance('Voice narration enabled.'); u.rate = 0.92; window.speechSynthesis.speak(u); }
+          }}
+          title={voiceEnabled ? 'Mute narration' : 'Enable narration'}
+          style={{
+            position: 'fixed', top: 20, right: 24, zIndex: 100,
+            background: voiceEnabled ? `${A_COLORS.blue}22` : `${A_COLORS.textMut}18`,
+            border: `1px solid ${voiceEnabled ? A_COLORS.blue + '55' : A_COLORS.border}`,
+            borderRadius: 8, padding: '7px 13px',
+            color: voiceEnabled ? A_COLORS.blue : A_COLORS.textMut,
+            fontFamily: 'Space Grotesk, sans-serif', fontSize: 11, fontWeight: 600,
+            cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 7,
+            transition: 'all 0.2s',
+          }}
+        >
+          <span style={{ fontSize: 14 }}>{voiceEnabled ? '🔊' : '🔇'}</span>
+          {voiceEnabled ? 'Voice On' : 'Voice Off'}
+        </button>
+
+        {page === 'contracts'    && <AgentContractsPage />}
+        {page === 'define'       && <DefineAgentPage />}
+        {page === 'verification' && <VerificationPage />}
+        {page === 'trace'        && <ExecutionTracePage />}
+        {page === 'infoflow'     && <InfoFlowPage />}
+        {page === 'safetylog'    && <SafetyLogPage />}
+        {page === 'proofs'       && <ProofsPage />}
+      </main>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
