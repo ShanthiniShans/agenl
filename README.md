@@ -297,6 +297,64 @@ Update BaseEnterpriseAgent once — every agent that extends it updates automati
 
 ---
 
+## Plugin Layer — Govern Any Existing Agent
+
+The biggest adoption barrier for any new framework is
+migration cost. AGENL solves this with AGENLWrapper —
+a one-line drop-in that governs any existing agent
+without requiring a rebuild.
+
+```python
+# Your existing LangChain agent — unchanged
+from langchain.agents import create_react_agent
+agent = create_react_agent(llm, tools, prompt)
+
+# Wrap it with AGENL governance — one line
+from agenl.plugins import AGENLWrapper
+governed_agent = AGENLWrapper(
+    agent=agent,
+    contract="agents/my_agent.agent"
+)
+
+# Now governed — same interface, enforced contract
+governed_agent.run(user_input)
+```
+
+**What AGENLWrapper does on every tool call:**
+
+| Action | What happens |
+|---|---|
+| Tool in allow list | Execution proceeds — logged |
+| Tool in block list | AGENLBlockedError raised — logged immediately |
+| Tool in confirm list | AGENLConfirmationRequired — human approval needed |
+| on_uncertain fires | AGENLEscalationError — full context logged |
+| on_error fires | AGENLEscalationError — pipeline halts |
+
+Every action is written to `escalation_log.json` with
+timestamp, tool name, status, and reason.
+
+**Works with any framework:**
+
+```python
+# LangChain
+from agenl.plugins import AGENLWrapper
+governed = AGENLWrapper(langchain_agent, 
+                        "agents/my_agent.agent")
+
+# AutoGen
+governed = AGENLWrapper(autogen_agent,
+                        "agents/my_agent.agent")
+
+# Any custom agent with .run() or .invoke()
+governed = AGENLWrapper(your_agent,
+                        "agents/my_agent.agent")
+```
+
+AGENL is not a replacement for your existing framework.
+It is the governance layer that sits above any framework.
+
+---
+
 ## CLI Commands
 
 ```bash
@@ -352,6 +410,8 @@ agenl/
 │   ├── parser.py             ← Lark grammar
 │   ├── converter.py          ← Natural language → AGENL
 │   ├── runtime.py            ← Contract enforcement
+│   ├── plugins.py            ← AGENLWrapper — governs any agent
+│   ├── exceptions.py         ← AGENLBlockedError, escalation errors
 │   └── cli.py                ← 8 CLI commands
 │
 ├── lakefile.toml             ← Lean 4 package config
@@ -371,6 +431,7 @@ agenl/
 - [x] Phase 6 — ORBITAL: 12-agent verified aerospace pipeline, 7 proof files, 18 theorems
 - [x] Phase 6.1 — ValidAgent + ValidPipeline typeclasses, pipeline composition proven
 - [x] Phase 6.2 — ORBITAL and AGENL dashboards with live pipeline animation
+- [x] Phase 6.3 — AGENLWrapper: govern any existing agent framework without rebuild
 - [ ] Phase 7 — safeRun: connect Lean proofs to live agent execution
 - [ ] Phase 8 — First customer: aerospace certification tooling, design partner
 - [ ] Phase 9 — SaaS platform: per-agent verification, domain agent packs, DO-178C compliance
