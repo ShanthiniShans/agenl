@@ -6,6 +6,14 @@ AGENL is a domain-specific language for defining AI agents with mathematically v
 
 ---
 
+## Origin
+
+This project was built during the **LeanLang for Verified Autonomy Hackathon** (April 17–18 + online through May 1, 2026) at the **Indian Institute of Science (IISc), Bangalore**.
+Sponsored by [Emergence AI](https://emergence.ai)
+Organized by [Emergence India Labs](https://east.emergence.ai) in collaboration with **IISc Bangalore**.
+
+---
+
 ## The Problem
 
 AI agents in production are governed by English prompts. Prompts are interpreted by the model — not enforced by the system. When interpretation goes wrong, the agent takes a real-world action you cannot undo.
@@ -469,3 +477,19 @@ See LICENSE for full terms.
 ---
 
 *AGENL — because enterprise AI agents need contracts, not wishes. And contracts need proofs, not hope.*
+
+---
+
+## Acknowledgments
+
+This project was made possible by:
+
+- **Emergence AI** — Hackathon sponsor
+- **Emergence India Labs** — Event organizer and research direction
+- **Indian Institute of Science (IISc), Bangalore** — Academic partner, hackathon co-design, tutorials, and mentorship
+
+## Links
+
+- [Hackathon Page](https://east.emergence.ai/hackathon-march2026.html)
+- [Emergence India Labs](https://east.emergence.ai)
+- [Emergence AI](https://emergence.ai)
