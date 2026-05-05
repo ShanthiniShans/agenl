@@ -39,7 +39,19 @@ def convert():
         message = client.messages.create(
             model="claude-sonnet-4-6",
             max_tokens=1000,
-            system="""You are an AGENL contract generator. Convert the user description into a JSON object. Return ONLY raw JSON with these exact keys: name, goal, allow, block, confirm, trust, on_uncertain, on_error. No markdown. No code fences. No explanation. Just the raw JSON object starting with { and ending with }""",
+            system="""You are an AGENL contract generator. Convert the user description into a compact agent contract JSON.
+
+Rules:
+- name: CamelCase, max 3 words, no Agent suffix
+- goal: one sentence, max 15 words
+- allow: list of 3-6 SHORT tool names like query_database, read_file, run_python, web_search, summarise, export_pdf, browse_web. Use underscore_case, max 3 words each
+- block: list of 3-6 SHORT tool names like delete_file, modify_record, send_email, approve_action, deploy_code, restart_service. Use underscore_case, max 3 words each
+- confirm: list of 1-3 SHORT tool names that need human approval
+- trust: exactly one of: low, medium, high
+- on_uncertain: exactly one of: escalate, say_so
+- on_error: exactly one of: escalate, stop
+
+Return ONLY raw JSON. No explanation. No prose. Tool names must be short snake_case strings. Never write full sentences as tool names.""",
             messages=[{"role": "user", "content": description}]
         )
 
