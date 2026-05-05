@@ -270,9 +270,13 @@ function DefineAgentPage() {
         throw new Error(err.error?.message || `API error ${response.status}`);
       }
       const data = await response.json();
-      const raw = data.result || '';
-      const parsed = JSON.parse(raw);
-      const capitalise = s => s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : 'Medium';
+      let parsed;
+      if (typeof data.result === 'string') {
+        parsed = JSON.parse(data.result);
+      } else {
+        parsed = data.result;
+      }
+      const capitalise = s => (s && typeof s === 'string') ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : 'Medium';
       setForm({
         name: parsed.name || '',
         goal: parsed.goal || '',

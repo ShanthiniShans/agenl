@@ -43,13 +43,18 @@ def convert():
             messages=[{"role": "user", "content": description}]
         )
 
+        import json as json_lib
         text = message.content[0].text
         text = re.sub(r'^```json\s*', '', text.strip())
         text = re.sub(r'^```\s*', '', text.strip())
         text = re.sub(r'\s*```$', '', text.strip())
         text = text.strip()
 
-        return jsonify({"result": text})
+        try:
+            parsed = json_lib.loads(text)
+            return jsonify({"result": parsed, "ok": True})
+        except Exception:
+            return jsonify({"result": text, "ok": False})
     except Exception as e:
         return jsonify({"error": {"message": str(e)}}), 500
 
