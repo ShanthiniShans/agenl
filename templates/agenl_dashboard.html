@@ -250,7 +250,72 @@ function DefineAgentPage() {
   const [confirmInput, setConfirmInput] = useState('');
   const [showContract, setShowContract] = useState(false);
   const [verifyResult, setVerifyResult] = useState(null);
+  const [apiKey, setApiKey] = useState('');
+  const [nlDescription, setNlDescription] = useState('');
+  const [nlLoading, setNlLoading] = useState(false);
+  const [nlMessage, setNlMessage] = useState(null);
   const set = (k, v) => setForm(p => ({ ...p, [k]: v }));
+
+  const generateFromDescription = async () => {
+    if (!apiKey.trim()) {
+      setNlMessage({ type: 'warn', text: 'Please enter your Anthropic API key first' });
+      return;
+    }
+    if (!nlDescription.trim()) return;
+    setNlLoading(true);
+    setNlMessage(null);
+    try {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey.trim(), 'anthropic-version': '2023-06-01' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          system: `You are an AGENL contract generator. Convert the user's plain English agent description into an AGENL contract with these fields extracted:
+- name: a short CamelCase agent name
+- goal: one sentence
+- allow: list of 3-5 specific tool names the agent needs
+- block: list of 3-5 specific tool names that must be blocked
+- confirm: list of 1-3 tools requiring human approval
+- trust: low, medium, or high
+- on_uncertain: escalate or say_so
+- on_error: escalate or stop
+
+Return ONLY a JSON object with these exact keys: name, goal, allow, block, confirm, trust, on_uncertain, on_error.
+No explanation. No markdown. Just JSON.`,
+          messages: [{ role: 'user', content: nlDescription.trim() }],
+        }),
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.error?.message || `API error ${response.status}`);
+      }
+      const data = await response.json();
+      const raw = data.content?.[0]?.text || '';
+      const parsed = JSON.parse(raw);
+      const capitalise = s => s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : 'Medium';
+      setForm({
+        name: parsed.name || '',
+        goal: parsed.goal || '',
+        persona: '',
+        trust: capitalise(parsed.trust),
+        onUncertain: parsed.on_uncertain || 'escalate',
+        onError: parsed.on_error || 'stop',
+        allow: Array.isArray(parsed.allow) ? parsed.allow : [],
+        block: Array.isArray(parsed.block) ? parsed.block : [],
+        confirm: Array.isArray(parsed.confirm) ? parsed.confirm : [],
+        memShort: 'session',
+        memLong: '',
+      });
+      setVerifyResult(null);
+      setShowContract(true);
+      setNlMessage({ type: 'success', text: 'Contract generated from your description' });
+    } catch (e) {
+      setNlMessage({ type: 'error', text: `Generation failed: ${e.message}` });
+    } finally {
+      setNlLoading(false);
+    }
+  };
 
   const dualConflict = form.allow.filter(a => form.block.includes(a));
   const warnings = [
@@ -305,6 +370,50 @@ agent ${form.name || 'unnamed'} where
   return (
     <div style={{ maxWidth: 900 }}>
       <PageHeader title="Define Agent" subtitle="Build a new agent contract. Validation runs live." />
+
+      {/* ── Natural Language Input ── */}
+      <Card style={{ marginBottom: 20, border: `1px solid ${C.blue}44`, background: `${C.blue}08` }}>
+        <CardTitle>Natural Language Input</CardTitle>
+        <div style={{ marginBottom: 14 }}>
+          <label style={{ display: 'block', fontSize: 10, color: C.textSec, marginBottom: 4, fontWeight: 500 }}>Anthropic API Key</label>
+          <input
+            type="password"
+            value={apiKey}
+            onChange={e => setApiKey(e.target.value)}
+            placeholder="sk-ant-..."
+            style={{ width: '100%', background: C.s3, border: `1px solid ${C.border2}`, borderRadius: 6, padding: '8px 12px', color: C.text, fontFamily: 'JetBrains Mono, monospace', fontSize: 12, outline: 'none', boxSizing: 'border-box' }}
+          />
+          <div style={{ marginTop: 5, fontSize: 10, color: C.textMut, fontFamily: 'Space Grotesk, sans-serif', lineHeight: 1.5 }}>
+            Key is stored in memory only. Never sent anywhere except Anthropic API.
+          </div>
+        </div>
+        <textarea
+          value={nlDescription}
+          onChange={e => setNlDescription(e.target.value)}
+          rows={5}
+          placeholder={'Describe your agent in plain English. Example:\nAn AI agent for a neuroscience research lab that searches PubMed and analyses brain imaging data but never deletes experimental data or submits to journals without principal investigator approval'}
+          style={{ width: '100%', background: C.s3, border: `1px solid ${C.border2}`, borderRadius: 6, padding: '10px 12px', color: C.text, fontFamily: 'Space Grotesk, sans-serif', fontSize: 12, outline: 'none', resize: 'vertical', lineHeight: 1.6, boxSizing: 'border-box' }}
+        />
+        <button
+          onClick={generateFromDescription}
+          disabled={nlLoading || !nlDescription.trim()}
+          style={{ marginTop: 10, width: '100%', background: nlLoading ? C.blue + '33' : C.blue, border: 'none', borderRadius: 7, padding: '11px 0', color: '#fff', fontFamily: 'Space Grotesk, sans-serif', fontSize: 13, fontWeight: 700, cursor: nlLoading || !nlDescription.trim() ? 'not-allowed' : 'pointer', opacity: !nlDescription.trim() ? 0.5 : 1, letterSpacing: 0.3, transition: 'all 0.15s' }}>
+          {nlLoading ? 'Generating contract…' : 'Generate Contract from Description'}
+        </button>
+        {nlMessage && (
+          <div style={{ marginTop: 10, background: `${nlMessage.type === 'success' ? C.green : nlMessage.type === 'warn' ? C.amber : C.red}15`, border: `1px solid ${nlMessage.type === 'success' ? C.green : nlMessage.type === 'warn' ? C.amber : C.red}44`, borderRadius: 6, padding: '8px 12px', fontSize: 12, color: nlMessage.type === 'success' ? C.green : nlMessage.type === 'warn' ? C.amber : C.red, fontFamily: 'Space Grotesk, sans-serif' }}>
+            {nlMessage.type === 'success' ? '✓ ' : nlMessage.type === 'warn' ? '⚠ ' : '✗ '}{nlMessage.text}
+          </div>
+        )}
+      </Card>
+
+      {/* ── Divider ── */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+        <div style={{ flex: 1, height: 1, background: C.border }} />
+        <span style={{ fontSize: 11, color: C.textMut, fontFamily: 'Space Grotesk, sans-serif', whiteSpace: 'nowrap' }}>— or fill manually below —</span>
+        <div style={{ flex: 1, height: 1, background: C.border }} />
+      </div>
+
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
         <div>
           <Card style={{ marginBottom: 16 }}>
