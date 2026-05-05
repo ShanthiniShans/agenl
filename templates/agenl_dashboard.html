@@ -250,48 +250,27 @@ function DefineAgentPage() {
   const [confirmInput, setConfirmInput] = useState('');
   const [showContract, setShowContract] = useState(false);
   const [verifyResult, setVerifyResult] = useState(null);
-  const [apiKey, setApiKey] = useState('');
   const [nlDescription, setNlDescription] = useState('');
   const [nlLoading, setNlLoading] = useState(false);
   const [nlMessage, setNlMessage] = useState(null);
   const set = (k, v) => setForm(p => ({ ...p, [k]: v }));
 
   const generateFromDescription = async () => {
-    if (!apiKey.trim()) {
-      setNlMessage({ type: 'warn', text: 'Please enter your Anthropic API key first' });
-      return;
-    }
     if (!nlDescription.trim()) return;
     setNlLoading(true);
     setNlMessage(null);
     try {
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
+      const response = await fetch('/api/convert', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey.trim(), 'anthropic-version': '2023-06-01' },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 1000,
-          system: `You are an AGENL contract generator. Convert the user's plain English agent description into an AGENL contract with these fields extracted:
-- name: a short CamelCase agent name
-- goal: one sentence
-- allow: list of 3-5 specific tool names the agent needs
-- block: list of 3-5 specific tool names that must be blocked
-- confirm: list of 1-3 tools requiring human approval
-- trust: low, medium, or high
-- on_uncertain: escalate or say_so
-- on_error: escalate or stop
-
-Return ONLY a JSON object with these exact keys: name, goal, allow, block, confirm, trust, on_uncertain, on_error.
-No explanation. No markdown. Just JSON.`,
-          messages: [{ role: 'user', content: nlDescription.trim() }],
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ description: nlDescription.trim() }),
       });
       if (!response.ok) {
         const err = await response.json().catch(() => ({}));
         throw new Error(err.error?.message || `API error ${response.status}`);
       }
       const data = await response.json();
-      const raw = data.content?.[0]?.text || '';
+      const raw = data.result || '';
       const parsed = JSON.parse(raw);
       const capitalise = s => s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : 'Medium';
       setForm({
@@ -374,19 +353,6 @@ agent ${form.name || 'unnamed'} where
       {/* ── Natural Language Input ── */}
       <Card style={{ marginBottom: 20, border: `1px solid ${C.blue}44`, background: `${C.blue}08` }}>
         <CardTitle>Natural Language Input</CardTitle>
-        <div style={{ marginBottom: 14 }}>
-          <label style={{ display: 'block', fontSize: 10, color: C.textSec, marginBottom: 4, fontWeight: 500 }}>Anthropic API Key</label>
-          <input
-            type="password"
-            value={apiKey}
-            onChange={e => setApiKey(e.target.value)}
-            placeholder="sk-ant-..."
-            style={{ width: '100%', background: C.s3, border: `1px solid ${C.border2}`, borderRadius: 6, padding: '8px 12px', color: C.text, fontFamily: 'JetBrains Mono, monospace', fontSize: 12, outline: 'none', boxSizing: 'border-box' }}
-          />
-          <div style={{ marginTop: 5, fontSize: 10, color: C.textMut, fontFamily: 'Space Grotesk, sans-serif', lineHeight: 1.5 }}>
-            Key is stored in memory only. Never sent anywhere except Anthropic API.
-          </div>
-        </div>
         <textarea
           value={nlDescription}
           onChange={e => setNlDescription(e.target.value)}
