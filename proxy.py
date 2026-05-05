@@ -59,67 +59,57 @@ def index():
 
 @app.route('/api/convert', methods=['POST'])
 def convert():
+    import subprocess, json as json_lib
+
     data = request.json
     description = data.get('description', '')
 
-    client = anthropic.Anthropic(api_key=os.getenv('ANTHROPIC_API_KEY'))
-
-    message = client.messages.create(
-        model="claude-sonnet-4-20250514",
-        max_tokens=300,
-        system="""Output ONLY a JSON object.
-No prose. No sentences. Only snake_case tool
-names of 1-3 words each.
-
-Example:
-{"name":"IncidentHandler",
-"goal":"Monitor systems and create tickets",
-"allow":["query_logs","read_metrics",
-"create_ticket","summarise"],
-"block":["restart_service","deploy_code",
-"delete_logs","modify_config"],
-"confirm":["page_oncall","rollback_deploy"],
-"trust":"low",
-"on_uncertain":"escalate",
-"on_error":"escalate"}""",
-        messages=[{
-            "role": "user",
-            "content": description
-        },{
-            "role": "assistant",
-            "content": "{\"name\":\""
-        }]
+    result = subprocess.run(
+        ['/Users/shanthinishans/agenl/venv/bin/python3', '-m', 'agenl.cli',
+         'convert', description],
+        capture_output=True,
+        text=True,
+        cwd='/Users/shanthinishans/agenl',
+        env={**os.environ, 'ANTHROPIC_API_KEY': os.getenv('ANTHROPIC_API_KEY')}
     )
 
-    import re, json as json_lib
+    # Strip ANSI escape codes from rich console output
+    output = re.sub(r'\x1b\[[0-9;]*m', '', result.stdout)
 
-    text = "{\"name\":\"" + message.content[0].text
-    text = re.sub(r'```[a-z]*\s*', '', text)
-    text = text.strip()
-    if not text.endswith('}'):
-        text = text + '}'
+    match = re.search(r'agent \w+ \{.*?\}', output, re.DOTALL)
 
-    try:
-        parsed = json_lib.loads(text)
+    if match:
+        contract_text = match.group(0)
 
-        def clean(tools):
-            result = []
-            for t in (tools or []):
-                words = re.sub(
-                    r'[^a-z0-9\s]', '',
-                    t.lower().strip()
-                ).split()[:3]
-                if words:
-                    result.append('_'.join(words))
-            return result[:5]
+        name_match  = re.search(r'agent (\w+)', contract_text)
+        goal_match  = re.search(r'goal:\s*"([^"]+)"', contract_text)
+        allow_match = re.search(r'allow:\s*\[([^\]]+)\]', contract_text)
+        block_match = re.search(r'block:\s*\[([^\]]+)\]', contract_text)
+        confirm_match = re.search(r'confirm:\s*\[([^\]]+)\]', contract_text)
+        trust_match = re.search(r'trust:\s*(\w+)', contract_text)
+        uncertain_match = re.search(r'on_uncertain:\s*(\w+)', contract_text)
+        error_match = re.search(r'on_error:\s*(\w+)', contract_text)
 
-        parsed['allow'] = clean(parsed.get('allow', []))
-        parsed['block'] = clean(parsed.get('block', []))
-        parsed['confirm'] = clean(parsed.get('confirm', []))
+        def parse_list(m):
+            if not m:
+                return []
+            items = m.group(1).split(',')
+            return [i.strip().strip('"') for i in items if i.strip()]
+
+        parsed = {
+            "name":         name_match.group(1) if name_match else "Agent",
+            "goal":         goal_match.group(1) if goal_match else "",
+            "allow":        parse_list(allow_match),
+            "block":        parse_list(block_match),
+            "confirm":      parse_list(confirm_match),
+            "trust":        trust_match.group(1) if trust_match else "low",
+            "on_uncertain": uncertain_match.group(1) if uncertain_match else "escalate",
+            "on_error":     error_match.group(1) if error_match else "escalate",
+        }
 
         return jsonify({"result": parsed, "ok": True})
-    except Exception as e:
-        return jsonify({"result": {}, "ok": False, "error": str(e) + " | " + text})
+
+    return jsonify({"result": {}, "ok": False, "error": result.stderr or "No contract block found"})
 
 if __name__ == '__main__':
     app.run(port=8080, debug=True)
