@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 import anthropic
 import os
+import re
 from pathlib import Path
 from dotenv import load_dotenv, dotenv_values
 
@@ -38,11 +39,17 @@ def convert():
         message = client.messages.create(
             model="claude-sonnet-4-6",
             max_tokens=1000,
-            system="""You are an AGENL contract generator. Convert the user description into a JSON object with these exact keys: name, goal, allow, block, confirm, trust, on_uncertain, on_error. Return ONLY JSON.""",
+            system="""You are an AGENL contract generator. Convert the user description into a JSON object. Return ONLY raw JSON with these exact keys: name, goal, allow, block, confirm, trust, on_uncertain, on_error. No markdown. No code fences. No explanation. Just the raw JSON object starting with { and ending with }""",
             messages=[{"role": "user", "content": description}]
         )
 
-        return jsonify({"result": message.content[0].text})
+        text = message.content[0].text
+        text = re.sub(r'^```json\s*', '', text.strip())
+        text = re.sub(r'^```\s*', '', text.strip())
+        text = re.sub(r'\s*```$', '', text.strip())
+        text = text.strip()
+
+        return jsonify({"result": text})
     except Exception as e:
         return jsonify({"error": {"message": str(e)}}), 500
 
