@@ -66,46 +66,60 @@ def convert():
 
     message = client.messages.create(
         model="claude-sonnet-4-20250514",
-        max_tokens=500,
-        system="""Extract agent contract fields.
-Return ONLY a JSON object. Use SHORT snake_case tool names (2-3 words max).
+        max_tokens=300,
+        system="""Output ONLY a JSON object.
+No prose. No sentences. Only snake_case tool
+names of 1-3 words each.
 
-Example of correct output:
-{
-  "name": "IncidentHandler",
-  "goal": "Monitor systems and create tickets",
-  "allow": ["query_database", "read_logs", "create_ticket", "summarise"],
-  "block": ["restart_service", "deploy_code", "delete_logs", "modify_config"],
-  "confirm": ["page_oncall", "rollback_deploy"],
-  "trust": "low",
-  "on_uncertain": "escalate",
-  "on_error": "escalate"
-}
-
-Rules for tool names:
-- MUST be snake_case like: read_file, delete_record, approve_action
-- NEVER write sentences as tool names
-- Max 3 words per tool name
-- 3-5 tools in allow list
-- 3-5 tools in block list
-- 1-3 tools in confirm list""",
+Example:
+{"name":"IncidentHandler",
+"goal":"Monitor systems and create tickets",
+"allow":["query_logs","read_metrics",
+"create_ticket","summarise"],
+"block":["restart_service","deploy_code",
+"delete_logs","modify_config"],
+"confirm":["page_oncall","rollback_deploy"],
+"trust":"low",
+"on_uncertain":"escalate",
+"on_error":"escalate"}""",
         messages=[{
             "role": "user",
-            "content": f"Convert this to a contract: {description}"
+            "content": description
+        },{
+            "role": "assistant",
+            "content": "{\"name\":\""
         }]
     )
 
-    import json as json_lib
-    text = message.content[0].text
-    text = re.sub(r'```json\s*', '', text)
-    text = re.sub(r'```\s*', '', text)
+    import re, json as json_lib
+
+    text = "{\"name\":\"" + message.content[0].text
+    text = re.sub(r'```[a-z]*\s*', '', text)
     text = text.strip()
+    if not text.endswith('}'):
+        text = text + '}'
 
     try:
-        parsed = clean_contract(json_lib.loads(text))
+        parsed = json_lib.loads(text)
+
+        def clean(tools):
+            result = []
+            for t in (tools or []):
+                words = re.sub(
+                    r'[^a-z0-9\s]', '',
+                    t.lower().strip()
+                ).split()[:3]
+                if words:
+                    result.append('_'.join(words))
+            return result[:5]
+
+        parsed['allow'] = clean(parsed.get('allow', []))
+        parsed['block'] = clean(parsed.get('block', []))
+        parsed['confirm'] = clean(parsed.get('confirm', []))
+
         return jsonify({"result": parsed, "ok": True})
     except Exception as e:
-        return jsonify({"result": text, "ok": False, "error": str(e)})
+        return jsonify({"result": {}, "ok": False, "error": str(e) + " | " + text})
 
 if __name__ == '__main__':
     app.run(port=8080, debug=True)
