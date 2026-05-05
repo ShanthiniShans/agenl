@@ -59,57 +59,51 @@ def index():
 
 @app.route('/api/convert', methods=['POST'])
 def convert():
-    import subprocess, json as json_lib
+    from agenl.converter import convert_to_agenl
 
     data = request.json
     description = data.get('description', '')
 
-    result = subprocess.run(
-        ['/Users/shanthinishans/agenl/venv/bin/python3', '-m', 'agenl.cli',
-         'convert', description],
-        capture_output=True,
-        text=True,
-        cwd='/Users/shanthinishans/agenl',
-        env={**os.environ, 'ANTHROPIC_API_KEY': os.getenv('ANTHROPIC_API_KEY')}
-    )
+    try:
+        output = convert_to_agenl(description)
+    except Exception as e:
+        return jsonify({"result": {}, "ok": False, "error": str(e)})
 
-    # Strip ANSI escape codes from rich console output
-    output = re.sub(r'\x1b\[[0-9;]*m', '', result.stdout)
+    def find(pattern, text, default=''):
+        m = re.search(pattern, text, re.DOTALL)
+        return m.group(1).strip() if m else default
 
-    match = re.search(r'agent \w+ \{.*?\}', output, re.DOTALL)
+    def parse_list(pattern, text):
+        m = re.search(pattern, text)
+        if not m:
+            return []
+        cleaned = []
+        for item in m.group(1).split(','):
+            item = item.strip().strip('"').strip()
+            if not item:
+                continue
+            if ' ' not in item:
+                # Already a token (snake_case or single word) — keep as-is
+                cleaned.append(item.lower())
+            else:
+                # Sentence — take first 3 words as snake_case
+                words = re.sub(r'[^a-zA-Z0-9\s]', '', item).lower().split()[:3]
+                if words:
+                    cleaned.append('_'.join(words))
+        return cleaned[:5]
 
-    if match:
-        contract_text = match.group(0)
+    parsed = {
+        "name":         find(r'agent\s+(\w+)', output, 'Agent'),
+        "goal":         find(r'goal:\s*"([^"]+)"', output),
+        "allow":        parse_list(r'allow:\s*\[([^\]]+)\]', output),
+        "block":        parse_list(r'block:\s*\[([^\]]+)\]', output),
+        "confirm":      parse_list(r'confirm:\s*\[([^\]]+)\]', output),
+        "trust":        find(r'trust:\s*(\w+)', output, 'low'),
+        "on_uncertain": find(r'on_uncertain:\s*(\w+)', output, 'escalate'),
+        "on_error":     find(r'on_error:\s*(\w+)', output, 'escalate'),
+    }
 
-        name_match  = re.search(r'agent (\w+)', contract_text)
-        goal_match  = re.search(r'goal:\s*"([^"]+)"', contract_text)
-        allow_match = re.search(r'allow:\s*\[([^\]]+)\]', contract_text)
-        block_match = re.search(r'block:\s*\[([^\]]+)\]', contract_text)
-        confirm_match = re.search(r'confirm:\s*\[([^\]]+)\]', contract_text)
-        trust_match = re.search(r'trust:\s*(\w+)', contract_text)
-        uncertain_match = re.search(r'on_uncertain:\s*(\w+)', contract_text)
-        error_match = re.search(r'on_error:\s*(\w+)', contract_text)
-
-        def parse_list(m):
-            if not m:
-                return []
-            items = m.group(1).split(',')
-            return [i.strip().strip('"') for i in items if i.strip()]
-
-        parsed = {
-            "name":         name_match.group(1) if name_match else "Agent",
-            "goal":         goal_match.group(1) if goal_match else "",
-            "allow":        parse_list(allow_match),
-            "block":        parse_list(block_match),
-            "confirm":      parse_list(confirm_match),
-            "trust":        trust_match.group(1) if trust_match else "low",
-            "on_uncertain": uncertain_match.group(1) if uncertain_match else "escalate",
-            "on_error":     error_match.group(1) if error_match else "escalate",
-        }
-
-        return jsonify({"result": parsed, "ok": True})
-
-    return jsonify({"result": {}, "ok": False, "error": result.stderr or "No contract block found"})
+    return jsonify({"result": parsed, "ok": True})
 
 if __name__ == '__main__':
     app.run(port=8080, debug=True)
